@@ -185,7 +185,7 @@ export default function HistoryScreen() {
     loadData();
   }, []);
 
-  const userRole = user?.role || 'Driver';
+  const userRole = user?.role || 'PumpAttendant';
 
   // Computed metrics
   const totalSpentFcfa = items
@@ -216,14 +216,14 @@ export default function HistoryScreen() {
         {/* Header */}
         <View style={styles.header}>
           <ThemedText type="caption" style={{ color: theme.textMuted, fontSize: 11 }}>
-            Relevé d'Opérations & Audit
+            Historique & Audit
           </ThemedText>
           <ThemedText type="display" style={{ color: theme.text, fontSize: 24, fontWeight: '700' }}>
             {userRole === 'StationCashier'
               ? 'Journal Caisse & Espèces'
               : userRole === 'FleetManager'
               ? 'Consommation Flotte B2B'
-              : 'Mes Pleins & Reçus'}
+              : 'Journal des Ventes & Pleins'}
           </ThemedText>
         </View>
 

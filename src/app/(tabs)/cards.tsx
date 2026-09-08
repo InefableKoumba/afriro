@@ -80,21 +80,21 @@ export default function CardsScreen() {
           offlineCounter: 12,
           status: 'Active',
           vehiclePlate: '542-CG-04',
-          assignedDriverName: 'Serge Moungalla',
+          assignedDriverName: 'Christian Okamba',
           fuelTypeRestriction: 'Gazole',
           dailySpendLimitFcfa: 50000,
           weeklySpendLimitFcfa: 200000,
         },
         {
           cardUid: '04B2C3D4E5F6A1',
-          balanceFcfa: 45000,
+          balanceFcfa: 120000,
           offlineCounter: 4,
           status: 'Active',
           vehiclePlate: '819-CG-04',
           assignedDriverName: 'Jean Makaya',
-          fuelTypeRestriction: 'Super',
-          dailySpendLimitFcfa: 40000,
-          weeklySpendLimitFcfa: 150000,
+          fuelTypeRestriction: 'Gazole',
+          dailySpendLimitFcfa: 60000,
+          weeklySpendLimitFcfa: 250000,
         },
         {
           cardUid: '04C3D4E5F6A1B2',
@@ -113,8 +113,7 @@ export default function CardsScreen() {
     loadCards();
   }, []);
 
-  const userRole = user?.role || 'Driver';
-  const isDriver = userRole === 'Driver';
+  const userRole = user?.role || 'PumpAttendant';
 
   // Toggle Freeze Card
   const toggleFreeze = async (card: CardItem) => {
@@ -273,33 +272,27 @@ export default function CardsScreen() {
         <View style={styles.headerRow}>
           <View>
             <ThemedText type="caption" style={{ color: theme.textMuted, fontSize: 11 }}>
-              {isDriver
-                ? 'Gestionnaire NFC Personnel'
-                : userRole === 'StationCashier'
+              {userRole === 'StationCashier'
                 ? 'Inventaire & Enrôlement'
                 : 'Flotte B2B & Véhicules'}
             </ThemedText>
             <ThemedText type="display" style={{ color: theme.text, fontSize: 24, fontWeight: '700' }}>
-              {isDriver
-                ? 'Ma Carte Carburant'
-                : userRole === 'StationCashier'
+              {userRole === 'StationCashier'
                 ? 'Stock de Cartes'
                 : 'Cartes Flotte'}
             </ThemedText>
           </View>
 
-          {/* Provision button for Cashier & Admin */}
-          {!isDriver && (
-            <Pressable
-              onPress={() => setShowProvisionModal(true)}
-              style={[styles.provisionBtn, { backgroundColor: theme.accentPrimary }]}
-            >
-              <Ionicons name="add" size={18} color="#FFFFFF" />
-              <ThemedText style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 13, marginLeft: 4 }}>
-                Nouvelle
-              </ThemedText>
-            </Pressable>
-          )}
+          {/* Provision button */}
+          <Pressable
+            onPress={() => setShowProvisionModal(true)}
+            style={[styles.provisionBtn, { backgroundColor: theme.accentPrimary }]}
+          >
+            <Ionicons name="add" size={18} color="#FFFFFF" />
+            <ThemedText style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 13, marginLeft: 4 }}>
+              Nouvelle
+            </ThemedText>
+          </Pressable>
         </View>
 
         {/* ======================================================= */}
@@ -477,24 +470,22 @@ export default function CardsScreen() {
               </ThemedText>
             </Pressable>
 
-            {/* Set Limits / Controls (Fleet Manager / Admin) */}
-            {!isDriver && (
-              <Pressable
-                onPress={() => {
-                  setSelectedCardForLimit(activeCard);
-                  setNewDailyLimit(activeCard.dailySpendLimitFcfa?.toString() || '50000');
-                  setNewWeeklyLimit(activeCard.weeklySpendLimitFcfa?.toString() || '200000');
-                  setNewFuelRestriction(activeCard.fuelTypeRestriction || 'None');
-                }}
-                style={[
-                  styles.actionBtn,
-                  { backgroundColor: theme.backgroundElement },
-                ]}
-              >
-                <Ionicons name="options-outline" size={20} color={theme.accentPrimary} />
-                <ThemedText style={styles.actionBtnText}>Plafonds & Règles</ThemedText>
-              </Pressable>
-            )}
+            {/* Set Limits / Controls */}
+            <Pressable
+              onPress={() => {
+                setSelectedCardForLimit(activeCard);
+                setNewDailyLimit(activeCard.dailySpendLimitFcfa?.toString() || '50000');
+                setNewWeeklyLimit(activeCard.weeklySpendLimitFcfa?.toString() || '200000');
+                setNewFuelRestriction(activeCard.fuelTypeRestriction || 'None');
+              }}
+              style={[
+                styles.actionBtn,
+                { backgroundColor: theme.backgroundElement },
+              ]}
+            >
+              <Ionicons name="options-outline" size={20} color={theme.accentPrimary} />
+              <ThemedText style={styles.actionBtnText}>Plafonds & Règles</ThemedText>
+            </Pressable>
 
             {/* NFC Hardware Info */}
             <Pressable
@@ -566,8 +557,7 @@ export default function CardsScreen() {
         {/* ======================================================= */}
         {/* FLEET / CASHIER: SEARCH & CARDS DIRECTORY               */}
         {/* ======================================================= */}
-        {!isDriver && (
-          <View style={{ marginTop: 24 }}>
+        <View style={{ marginTop: 24 }}>
             <View style={styles.rowBetween}>
               <ThemedText style={{ color: theme.text, fontSize: 17, fontWeight: '700' }}>
                 Répertoire du Parc ({filteredCards.length})
@@ -688,7 +678,6 @@ export default function CardsScreen() {
               );
             })}
           </View>
-        )}
       </ScrollView>
 
       {/* ======================================================= */}
@@ -748,7 +737,7 @@ export default function CardsScreen() {
               <TextInput
                 value={newDriver}
                 onChangeText={setNewDriver}
-                placeholder="Ex: Serge Moungalla"
+                placeholder="Ex: Christian Okamba"
                 placeholderTextColor={theme.textMuted}
                 style={[styles.inputBox, { color: theme.text, backgroundColor: theme.background }]}
               />

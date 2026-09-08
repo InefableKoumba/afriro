@@ -64,10 +64,6 @@ export default function ProfileScreen() {
         return 'Guichetier Caisse Station';
       case 'FleetManager':
         return 'Gestionnaire Flotte B2B (LEC)';
-      case 'Driver':
-        return 'Chauffeur Flotte & Porteur';
-      case 'Admin':
-        return 'Superviseur Réseau & Audit';
       default:
         return 'Opérateur Afric\'';
     }

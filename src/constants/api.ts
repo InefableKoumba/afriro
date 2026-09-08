@@ -2,7 +2,7 @@
  * AfriRo Central Backend API Configuration
  * Supports environment overrides via EXPO_PUBLIC_API_URL.
  */
-export const API_BASE_URL = "http://192.168.100.41:5204";
+export const API_BASE_URL = "http://192.168.100.41:5150";
 
 export const API_ENDPOINTS = {
   HEALTH: `${API_BASE_URL}/api/health`,

@@ -46,22 +46,6 @@ export const DEMO_PROFILES: DemoProfileItem[] = [
       "Supervision flotte LEC, plafonds véhicules & blocage à distance",
     icon: "business-outline",
   },
-  {
-    role: "Driver",
-    roleLabel: "Chauffeur Flotte",
-    sublabel: "Serge Moungalla · Porteur LEC (542-CG-04)",
-    phone: "+242060000005",
-    description: "Portefeuille carburant personnel, solde carte & reçus",
-    icon: "car-sport-outline",
-  },
-  {
-    role: "Admin",
-    roleLabel: "Direction Réseau Afric'",
-    sublabel: "Directeur Réseau Afric' · Siège",
-    phone: "+242060000001",
-    description: "Supervision globale, audit transactions & switch multi-rôles",
-    icon: "shield-checkmark-outline",
-  },
 ];
 
 type AuthListener = (user: MobileUserSession | null) => void;

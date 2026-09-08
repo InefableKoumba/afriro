@@ -50,32 +50,7 @@ export default function TabLayout() {
           profileTitle: 'Profil',
           profileIcon: 'person-outline' as const,
         };
-      case 'Driver':
-        return {
-          indexTitle: 'Portefeuille',
-          indexIcon: 'wallet-outline' as const,
-          cardsTitle: 'Ma Carte',
-          cardsIcon: 'card-outline' as const,
-          historyTitle: 'Mes Pleins',
-          historyIcon: 'receipt-outline' as const,
-          stationsTitle: 'Stations',
-          stationsIcon: 'location-outline' as const,
-          profileTitle: 'Mon Compte',
-          profileIcon: 'person-outline' as const,
-        };
-      case 'Admin':
-        return {
-          indexTitle: 'Hub Wallet',
-          indexIcon: 'wallet-outline' as const,
-          cardsTitle: 'Cartes',
-          cardsIcon: 'card-outline' as const,
-          historyTitle: 'Audit',
-          historyIcon: 'receipt-outline' as const,
-          stationsTitle: 'Stations',
-          stationsIcon: 'business-outline' as const,
-          profileTitle: 'Admin',
-          profileIcon: 'shield-checkmark-outline' as const,
-        };
+
       case 'PumpAttendant':
       default:
         return {

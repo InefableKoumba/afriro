@@ -46,7 +46,6 @@ export default function WalletDashboardScreen() {
   const router = useRouter();
 
   const [user, setUser] = useState<MobileUserSession | null>(mobileAuth.getUser());
-  const [adminActiveTab, setAdminActiveTab] = useState<'pos' | 'caisse' | 'fleet' | 'driver'>('pos');
 
   // Cards state
   const [cards, setCards] = useState<CardPayload[]>([]);
@@ -420,8 +419,6 @@ export default function WalletDashboardScreen() {
                 {userRole === 'PumpAttendant' && 'Pompiste · En Quart'}
                 {userRole === 'StationCashier' && 'Guichetier · Caisse'}
                 {userRole === 'FleetManager' && 'Gestionnaire Flotte B2B'}
-                {userRole === 'Driver' && 'Chauffeur · Portefeuille'}
-                {userRole === 'Admin' && 'Superviseur Central'}
               </ThemedText>
               <ThemedText type="subtitle" style={{ color: theme.text, fontSize: 18, fontWeight: '600' }}>
                 {user?.fullName || "Afric' Utilisateur"}
@@ -465,53 +462,6 @@ export default function WalletDashboardScreen() {
             )}
           </Pressable>
         </View>
-
-        {/* Admin Multi-Module Switcher */}
-        {userRole === 'Admin' && (
-          <View
-            style={[
-              styles.adminTabs,
-              { backgroundColor: theme.backgroundElement },
-            ]}
-          >
-            <ThemedText type="caption" style={{ color: theme.textMuted, marginBottom: 8, fontSize: 11 }}>
-              Simulateur de Module Métier (Admin) :
-            </ThemedText>
-            <View style={styles.adminTabGrid}>
-              {[
-                { key: 'pos', label: '⛽ SoftPOS' },
-                { key: 'caisse', label: '💵 Caisse' },
-                { key: 'fleet', label: '🏢 Flotte' },
-                { key: 'driver', label: '🚗 Chauffeur' },
-              ].map((t) => {
-                const active = adminActiveTab === t.key;
-                return (
-                  <Pressable
-                    key={t.key}
-                    onPress={() => setAdminActiveTab(t.key as any)}
-                    style={[
-                      styles.adminChip,
-                      {
-                        backgroundColor: active ? theme.accentPrimary : theme.backgroundSelected,
-                      },
-                    ]}
-                  >
-                    <ThemedText
-                      type="caption"
-                      style={{
-                        color: active ? '#FFFFFF' : theme.text,
-                        fontWeight: active ? '700' : '500',
-                        fontSize: 11,
-                      }}
-                    >
-                      {t.label}
-                    </ThemedText>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </View>
-        )}
 
         {/* ======================================================= */}
         {/* 2. HERO REVOLUT-STYLE RFID VIRTUAL CARD                */}
@@ -679,7 +629,7 @@ export default function WalletDashboardScreen() {
               <Ionicons name="flash" size={24} color="#FFFFFF" />
             </Pressable>
             <ThemedText style={styles.actionLabel}>
-              {userRole === 'Driver' ? 'Payer NFC' : 'Servir / POS'}
+              Servir / POS
             </ThemedText>
           </View>
 
@@ -1395,22 +1345,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: Radius.pill,
-  },
-  adminTabs: {
-    padding: 12,
-    borderRadius: Radius.card,
-    marginBottom: Spacing.lg,
-  },
-  adminTabGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  adminChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: Radius.sm,
   },
 
   // Revolut-Style Virtual Card
