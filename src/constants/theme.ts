@@ -30,11 +30,11 @@ export const Colors = {
     textMuted: '#9C8E82',
     textSubtle: '#C0B4A8',
 
-    // Borders & Hairlines
-    borderHairline: 'rgba(26,22,18,0.08)',
-    borderSubtle: 'rgba(26,22,18,0.12)',
-    borderMedium: 'rgba(26,22,18,0.18)',
-    borderStrong: '#D8D0C8',
+    // Borders & Hairlines - Removed for ultra-minimalist borderless design
+    borderHairline: 'transparent',
+    borderSubtle: 'transparent',
+    borderMedium: 'transparent',
+    borderStrong: 'transparent',
 
     // Status
     statusSuccess: '#15803D',
@@ -46,10 +46,10 @@ export const Colors = {
     // Backgrounds (warm near-black, never pure #000000 for base)
     background: '#0A0A0A',
     backgroundDeep: '#000000',
-    backgroundElement: '#121212', // surface
-    backgroundSelected: '#181818', // surface raised
-    backgroundHighlight: '#242424',
-    backgroundElevated: '#2A2A2A',
+    backgroundElement: '#141414', // surface
+    backgroundSelected: '#1C1C1C', // surface raised
+    backgroundHighlight: '#222222',
+    backgroundElevated: '#282828',
 
     // Accents (Copper)
     accentPrimary: '#D8804A',
@@ -66,11 +66,11 @@ export const Colors = {
     textMuted: '#717171',
     textSubtle: '#525252',
 
-    // Borders & Hairlines
-    borderHairline: 'rgba(255,255,255,0.08)',
-    borderSubtle: 'rgba(255,255,255,0.12)',
-    borderMedium: 'rgba(255,255,255,0.18)',
-    borderStrong: '#282828',
+    // Borders & Hairlines - Removed for ultra-minimalist borderless design
+    borderHairline: 'transparent',
+    borderSubtle: 'transparent',
+    borderMedium: 'transparent',
+    borderStrong: 'transparent',
 
     // Status
     statusSuccess: '#22C55E',
@@ -118,10 +118,10 @@ export const Fonts = Platform.select({
 });
 
 export const Radius = {
-  sm: 6,
-  chip: 10,
-  card: 16,
-  modal: 24,
+  sm: 8,
+  chip: 12,
+  card: 24, // Generous modern rounded radius on cards
+  modal: 28,
   pill: 9999,
 } as const;
 
@@ -129,15 +129,16 @@ export const Spacing = {
   xs: 4,
   sm: 8,
   md: 16,
-  lg: 24,
+  lg: 20,
   xl: 32,
   xxl: 48,
+  screenPadding: 16, // Reduced screen horizontal padding across all screens
   // backwards compatibility tokens
   half: 2,
   one: 4,
   two: 8,
   three: 16,
-  four: 24,
+  four: 20,
   five: 32,
   six: 64,
 } as const;

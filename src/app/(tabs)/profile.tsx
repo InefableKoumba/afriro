@@ -96,11 +96,11 @@ export default function ProfileScreen() {
           <View
             style={[
               styles.heroProfileCard,
-              { backgroundColor: '#161514', borderColor: 'rgba(216,128,74,0.3)' },
+              { backgroundColor: '#161514' },
             ]}
           >
             <View style={styles.profileTopRow}>
-              <View style={[styles.avatarRing, { borderColor: theme.accentPrimary }]}>
+              <View style={styles.avatarRing}>
                 <View style={[styles.avatarCore, { backgroundColor: theme.accentTranslucent }]}>
                   <ThemedText style={{ color: theme.accentPrimary, fontSize: 22, fontWeight: '800' }}>
                     {(user.fullName || 'JS')
@@ -126,7 +126,7 @@ export default function ProfileScreen() {
             </View>
 
             {/* Quick Status Badges */}
-            <View style={[styles.profileMetaRow, { borderTopColor: 'rgba(255,255,255,0.08)' }]}>
+            <View style={styles.profileMetaRow}>
               <View style={styles.metaItem}>
                 <View style={[styles.metaDot, { backgroundColor: '#22C55E' }]} />
                 <ThemedText style={styles.metaText}>Session JWT Valide</ThemedText>
@@ -157,13 +157,13 @@ export default function ProfileScreen() {
           <View
             style={[
               styles.settingsCard,
-              { backgroundColor: theme.backgroundElement, borderColor: theme.borderHairline },
+              { backgroundColor: theme.backgroundElement },
             ]}
           >
             {/* Biometric Toggle */}
             <Pressable
               onPress={() => setBiometricsEnabled(!biometricsEnabled)}
-              style={[styles.settingRow, { borderBottomColor: theme.borderHairline }]}
+              style={styles.settingRow}
             >
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <View style={[styles.settingIconBox, { backgroundColor: 'rgba(216,128,74,0.15)' }]}>
@@ -186,7 +186,7 @@ export default function ProfileScreen() {
             </Pressable>
 
             {/* Offline Cryptography */}
-            <View style={[styles.settingRow, { borderBottomColor: theme.borderHairline }]}>
+            <View style={styles.settingRow}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <View style={[styles.settingIconBox, { backgroundColor: 'rgba(34,197,94,0.15)' }]}>
                   <Ionicons name="key-outline" size={18} color={theme.statusSuccess} />
@@ -206,7 +206,7 @@ export default function ProfileScreen() {
             </View>
 
             {/* Backend Connectivity Status */}
-            <View style={[styles.settingRow, { borderBottomWidth: 0 }]}>
+            <View style={styles.settingRow}>
               <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 }}>
                 <View style={[styles.settingIconBox, { backgroundColor: 'rgba(59,130,246,0.15)' }]}>
                   <Ionicons name="server-outline" size={18} color="#3B82F6" />
@@ -251,7 +251,6 @@ export default function ProfileScreen() {
                     styles.personaCard,
                     {
                       backgroundColor: isCurrent ? 'rgba(216,128,74,0.18)' : theme.backgroundElement,
-                      borderColor: isCurrent ? theme.accentPrimary : theme.borderHairline,
                       opacity: isCurrent ? 1 : pressed ? 0.85 : 0.95,
                     },
                   ]}
@@ -311,7 +310,6 @@ export default function ProfileScreen() {
               styles.guideButton,
               {
                 backgroundColor: theme.backgroundElement,
-                borderColor: theme.borderHairline,
                 opacity: pressed ? 0.85 : 1,
               },
             ]}
@@ -340,7 +338,7 @@ export default function ProfileScreen() {
           onPress={handleLogout}
           style={({ pressed }) => [
             styles.logoutPill,
-            { borderColor: theme.statusError, opacity: pressed ? 0.85 : 1 },
+            { backgroundColor: 'rgba(239,68,68,0.12)', opacity: pressed ? 0.85 : 1 },
           ]}
         >
           <Ionicons name="log-out-outline" size={18} color={theme.statusError} style={{ marginRight: 6 }} />
@@ -358,7 +356,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: Spacing.screenPadding,
     paddingTop: Spacing.md,
     maxWidth: 600,
     width: '100%',
@@ -368,9 +366,8 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
   },
   heroProfileCard: {
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: 18,
+    borderRadius: Radius.card,
+    padding: 20,
     marginBottom: Spacing.xl,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
@@ -387,7 +384,6 @@ const styles = StyleSheet.create({
     width: 58,
     height: 58,
     borderRadius: 29,
-    borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -402,8 +398,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 12,
-    borderTopWidth: 1,
+    paddingTop: 14,
   },
   metaItem: {
     flexDirection: 'row',
@@ -423,7 +418,7 @@ const styles = StyleSheet.create({
   metaDivider: {
     width: 1,
     height: 12,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(255,255,255,0.06)',
   },
   sectionBlock: {
     marginBottom: Spacing.xl,
@@ -436,7 +431,6 @@ const styles = StyleSheet.create({
   },
   settingsCard: {
     borderRadius: Radius.card,
-    borderWidth: 1,
     overflow: 'hidden',
   },
   settingRow: {
@@ -445,7 +439,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 14,
-    borderBottomWidth: 1,
   },
   settingIconBox: {
     width: 38,
@@ -473,8 +466,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 14,
-    borderRadius: Radius.chip,
-    borderWidth: 1,
+    borderRadius: Radius.card,
   },
   personaLeft: {
     flexDirection: 'row',
@@ -503,8 +495,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 14,
-    borderRadius: Radius.chip,
-    borderWidth: 1,
+    borderRadius: Radius.card,
   },
   logoutPill: {
     flexDirection: 'row',
@@ -512,7 +503,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 14,
     borderRadius: Radius.pill,
-    borderWidth: 1,
     marginTop: 6,
     marginBottom: 20,
   },

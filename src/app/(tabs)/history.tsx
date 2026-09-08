@@ -233,7 +233,7 @@ export default function HistoryScreen() {
         <View
           style={[
             styles.heroAnalyticsCard,
-            { backgroundColor: '#161514', borderColor: 'rgba(216,128,74,0.3)' },
+            { backgroundColor: '#161514' },
           ]}
         >
           <View style={styles.analyticsHeader}>
@@ -256,7 +256,7 @@ export default function HistoryScreen() {
           </View>
 
           {/* Sub Metrics Row */}
-          <View style={[styles.subMetricsRow, { borderTopColor: 'rgba(255,255,255,0.08)' }]}>
+          <View style={styles.subMetricsRow}>
             <View style={styles.subMetricCol}>
               <ThemedText style={styles.subMetricLabel}>Volume Total</ThemedText>
               <ThemedText style={styles.subMetricVal}>{totalLiters.toFixed(1)} Litres</ThemedText>
@@ -297,7 +297,6 @@ export default function HistoryScreen() {
                   styles.filterChip,
                   {
                     backgroundColor: active ? theme.accentPrimary : theme.backgroundElement,
-                    borderColor: active ? theme.accentPrimary : theme.borderHairline,
                   },
                 ]}
               >
@@ -324,7 +323,7 @@ export default function HistoryScreen() {
           <View
             style={[
               styles.emptyCard,
-              { backgroundColor: theme.backgroundElement, borderColor: theme.borderHairline },
+              { backgroundColor: theme.backgroundElement },
             ]}
           >
             <Ionicons name="receipt-outline" size={40} color={theme.textMuted} />
@@ -354,7 +353,6 @@ export default function HistoryScreen() {
                     styles.txItem,
                     {
                       backgroundColor: theme.backgroundElement,
-                      borderColor: theme.borderHairline,
                       opacity: pressed ? 0.88 : 1,
                     },
                   ]}
@@ -448,7 +446,7 @@ export default function HistoryScreen() {
             </View>
 
             {selectedItem && (
-              <View style={[styles.receiptBox, { backgroundColor: theme.background, borderColor: theme.borderHairline }]}>
+              <View style={[styles.receiptBox, { backgroundColor: theme.background }]}>
                 <View style={styles.receiptLine}>
                   <ThemedText type="caption" style={{ color: theme.textMuted }}>Identifiant TXN</ThemedText>
                   <ThemedText type="caption" style={{ color: theme.text, fontWeight: '600' }}>{selectedItem.id}</ThemedText>
@@ -511,7 +509,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: Spacing.screenPadding,
     paddingTop: Spacing.md,
     maxWidth: 600,
     width: '100%',
@@ -521,9 +519,8 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
   },
   heroAnalyticsCard: {
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: 18,
+    borderRadius: Radius.card,
+    padding: 20,
     marginBottom: Spacing.lg,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
@@ -568,7 +565,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingTop: 14,
-    borderTopWidth: 1,
   },
   subMetricCol: {
     flex: 1,
@@ -577,7 +573,7 @@ const styles = StyleSheet.create({
   subMetricDivider: {
     width: 1,
     height: '80%',
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(255,255,255,0.06)',
     alignSelf: 'center',
   },
   subMetricLabel: {
@@ -600,14 +596,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: Radius.pill,
-    borderWidth: 1,
   },
   emptyCard: {
     alignItems: 'center',
     justifyContent: 'center',
     padding: 32,
     borderRadius: Radius.card,
-    borderWidth: 1,
   },
   txList: {
     gap: 8,
@@ -617,8 +611,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 14,
-    borderRadius: Radius.chip,
-    borderWidth: 1,
+    borderRadius: Radius.card,
   },
   txLeft: {
     flexDirection: 'row',
@@ -644,8 +637,8 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalSheet: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: Radius.modal,
+    borderTopRightRadius: Radius.modal,
     padding: Spacing.xl,
     paddingBottom: 36,
   },
@@ -665,7 +658,6 @@ const styles = StyleSheet.create({
   },
   receiptBox: {
     borderRadius: Radius.card,
-    borderWidth: 1,
     padding: 14,
   },
   receiptLine: {
@@ -673,8 +665,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
   },
   printReceiptBtn: {
     flexDirection: 'row',

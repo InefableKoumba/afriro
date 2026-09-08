@@ -153,7 +153,6 @@ export default function OnboardingScreen({ onFinish }: { onFinish?: () => void }
                 style={[
                   styles.iconOuterRing,
                   {
-                    borderColor: theme.borderSubtle,
                     backgroundColor: theme.backgroundElement,
                   },
                 ]}
@@ -173,7 +172,6 @@ export default function OnboardingScreen({ onFinish }: { onFinish?: () => void }
                   styles.badgePill,
                   {
                     backgroundColor: theme.accentTranslucent,
-                    borderColor: theme.borderHairline,
                   },
                 ]}
               >
@@ -242,7 +240,7 @@ export default function OnboardingScreen({ onFinish }: { onFinish?: () => void }
                     styles.dot,
                     active
                       ? [styles.activeDot, { backgroundColor: theme.accentPrimary }]
-                      : { backgroundColor: theme.borderMedium },
+                      : { backgroundColor: theme.textSubtle },
                   ]}
                 />
               </Pressable>
@@ -284,7 +282,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: Spacing.screenPadding,
     paddingTop: Spacing.sm,
     paddingBottom: Spacing.xs,
   },
@@ -308,7 +306,7 @@ const styles = StyleSheet.create({
   slidePage: {
     flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: Spacing.screenPadding,
     maxWidth: 500,
     width: '100%',
     alignSelf: 'center',
@@ -321,7 +319,6 @@ const styles = StyleSheet.create({
     width: 110,
     height: 110,
     borderRadius: 55,
-    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: Spacing.md,
@@ -337,7 +334,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: Radius.pill,
-    borderWidth: 1,
   },
   textSection: {
     alignItems: 'flex-start',
@@ -362,7 +358,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   bottomBar: {
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: Spacing.screenPadding,
     paddingBottom: Spacing.lg,
     paddingTop: Spacing.md,
     gap: Spacing.lg,

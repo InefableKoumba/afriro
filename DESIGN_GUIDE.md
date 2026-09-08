@@ -132,13 +132,14 @@ Two typeface families, each with a single, distinct job. **Do not introduce a th
 | `space.xs` | 4px | Icon-to-label gaps, tight inline pairs |
 | `space.sm` | 8px | Tight internal padding, icon margins |
 | `space.md` | 16px | Standard card/list padding, gaps between elements |
-| `space.lg` | 24px | Section spacing, screen horizontal margins |
+| `space.screenPadding` | 16px | Reduced screen horizontal margins across all screens |
+| `space.lg` | 20px | Section spacing |
 | `space.xl` | 32px | Hero spacing (artwork to controls) |
 | `space.xxl` | 48px | Major section breaks, empty-state vertical centering |
 
 ### Spacing Rules
 
-- Screen horizontal margin is **always 20-24px** (use `space.lg`), consistent across all screens.
+- Screen horizontal margin is **reduced to 16px** (`space.screenPadding`), consistent across all screens for edge-to-edge breathing room.
 - Elements must **never touch a screen edge** or each other with less than `space.sm`.
 - Full-bleed content (artwork, video) is the only exception to horizontal margins.
 
@@ -148,10 +149,10 @@ Two typeface families, each with a single, distinct job. **Do not introduce a th
 
 | Token | Value | Use |
 |---|---|---|
-| `radius.sm` | 6px | Badges, small utility elements |
-| `radius.chip` | 10px | Input fields, filter chips, tags |
-| `radius.card` | 16px | Cards, artwork thumbnails, modals |
-| `radius.modal` | 24px | Large bottom sheets, full-panel modals |
+| `radius.sm` | 8px | Badges, small utility elements |
+| `radius.chip` | 12px | Input fields, filter chips, tags |
+| `radius.card` | 24px | Cards, artwork thumbnails, modals (generous modern radius) |
+| `radius.modal` | 28px | Large bottom sheets, full-panel modals |
 | `radius.pill` | 9999px | Buttons, toggles, pill-shaped tags |
 
 **Never mix radius values within the same component type on a single screen.**
@@ -160,15 +161,15 @@ Two typeface families, each with a single, distinct job. **Do not introduce a th
 
 ## 6. Elevation & Depth
 
-Elevation is communicated through **surface contrast and hairline borders only** — no drop shadows, no box-shadow heavy stacking.
+Elevation is communicated through **surface contrast only in a borderless minimalist design** — no border outlines cluttering cards and containers.
 
 | Level | Background | Border | Blur | Use |
 |---|---|---|---|---|
 | 0 - Base | `bg.base` | — | — | Screen background |
-| 1 - Surface | `bg.surface` | `border.hairline` | — | Cards, list containers, mini-player |
-| 2 - Raised | `bg.surface.raised` | `border.subtle` | — | Modals, popovers |
-| 3 - Sheet | `bg.surface` @ 80% opacity | `border.subtle` | 20px backdrop blur | Bottom sheets, frosted overlays |
-| 4 - Floating | `bg.surface.elevated` | `border.medium` | — | Floating toolbars, tooltips |
+| 1 - Surface | `bg.surface` | None (transparent) | — | Cards, list containers, mini-player |
+| 2 - Raised | `bg.surface.raised` | None (transparent) | — | Modals, popovers |
+| 3 - Sheet | `bg.surface` @ 80% opacity | None (transparent) | 20px backdrop blur | Bottom sheets, frosted overlays |
+| 4 - Floating | `bg.surface.elevated` | None (transparent) | — | Floating toolbars, tooltips |
 
 ---
 

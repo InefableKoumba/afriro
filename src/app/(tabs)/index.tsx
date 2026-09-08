@@ -438,7 +438,6 @@ export default function WalletDashboardScreen() {
               {
                 backgroundColor:
                   pendingQueueCount > 0 ? 'rgba(216,128,74,0.15)' : 'rgba(34,197,94,0.15)',
-                borderColor: pendingQueueCount > 0 ? theme.accentPrimary : theme.statusSuccess,
               },
             ]}
           >
@@ -472,7 +471,7 @@ export default function WalletDashboardScreen() {
           <View
             style={[
               styles.adminTabs,
-              { backgroundColor: theme.backgroundElement, borderColor: theme.borderHairline },
+              { backgroundColor: theme.backgroundElement },
             ]}
           >
             <ThemedText type="caption" style={{ color: theme.textMuted, marginBottom: 8, fontSize: 11 }}>
@@ -494,7 +493,6 @@ export default function WalletDashboardScreen() {
                       styles.adminChip,
                       {
                         backgroundColor: active ? theme.accentPrimary : theme.backgroundSelected,
-                        borderColor: active ? theme.accentPrimary : theme.borderSubtle,
                       },
                     ]}
                   >
@@ -524,7 +522,6 @@ export default function WalletDashboardScreen() {
               styles.revolutCard,
               {
                 backgroundColor: '#161514',
-                borderColor: 'rgba(216,128,74,0.3)',
               },
             ]}
           >
@@ -636,7 +633,6 @@ export default function WalletDashboardScreen() {
                         backgroundColor: isSelected
                           ? 'rgba(216,128,74,0.18)'
                           : theme.backgroundElement,
-                        borderColor: isSelected ? theme.accentPrimary : theme.borderHairline,
                       },
                     ]}
                   >
@@ -699,8 +695,6 @@ export default function WalletDashboardScreen() {
                 styles.actionCircle,
                 {
                   backgroundColor: theme.backgroundElement,
-                  borderColor: theme.borderHairline,
-                  borderWidth: 1,
                 },
                 pressed && { opacity: 0.85, transform: [{ scale: 0.96 }] },
               ]}
@@ -719,8 +713,6 @@ export default function WalletDashboardScreen() {
                 styles.actionCircle,
                 {
                   backgroundColor: theme.backgroundElement,
-                  borderColor: theme.borderHairline,
-                  borderWidth: 1,
                 },
                 pressed && { opacity: 0.85, transform: [{ scale: 0.96 }] },
               ]}
@@ -748,8 +740,6 @@ export default function WalletDashboardScreen() {
                 styles.actionCircle,
                 {
                   backgroundColor: theme.backgroundElement,
-                  borderColor: theme.borderHairline,
-                  borderWidth: 1,
                 },
                 pressed && { opacity: 0.85, transform: [{ scale: 0.96 }] },
               ]}
@@ -770,7 +760,7 @@ export default function WalletDashboardScreen() {
           <View
             style={[
               styles.metricCard,
-              { backgroundColor: theme.backgroundElement, borderColor: theme.borderHairline },
+              { backgroundColor: theme.backgroundElement },
             ]}
           >
             <View style={styles.metricHeader}>
@@ -796,7 +786,7 @@ export default function WalletDashboardScreen() {
           <View
             style={[
               styles.metricCard,
-              { backgroundColor: theme.backgroundElement, borderColor: theme.borderHairline },
+              { backgroundColor: theme.backgroundElement },
             ]}
           >
             <View style={styles.metricHeader}>
@@ -843,7 +833,7 @@ export default function WalletDashboardScreen() {
             <View
               style={[
                 styles.emptyActivityBox,
-                { backgroundColor: theme.backgroundElement, borderColor: theme.borderHairline },
+                { backgroundColor: theme.backgroundElement },
               ]}
             >
               <Ionicons name="receipt-outline" size={28} color={theme.textMuted} />
@@ -864,8 +854,6 @@ export default function WalletDashboardScreen() {
                     styles.txnRow,
                     {
                       backgroundColor: theme.backgroundElement,
-                      borderColor: theme.borderHairline,
-                      borderBottomWidth: idx < recentTxns.length - 1 ? 1 : 0,
                     },
                   ]}
                 >
@@ -960,7 +948,6 @@ export default function WalletDashboardScreen() {
                       styles.fuelChip,
                       {
                         backgroundColor: active ? theme.accentPrimary : theme.backgroundSelected,
-                        borderColor: active ? theme.accentPrimary : theme.borderHairline,
                       },
                     ]}
                   >
@@ -999,7 +986,6 @@ export default function WalletDashboardScreen() {
                         styles.presetChip,
                         {
                           backgroundColor: active ? 'rgba(216,128,74,0.2)' : theme.background,
-                          borderColor: active ? theme.accentPrimary : theme.borderHairline,
                         },
                       ]}
                     >
@@ -1015,7 +1001,7 @@ export default function WalletDashboardScreen() {
                   );
                 })}
               </View>
-              <View style={[styles.customLitersInput, { borderColor: theme.borderHairline }]}>
+              <View style={[styles.customLitersInput, { backgroundColor: theme.background }]}>
                 <TextInput
                   value={liters}
                   onChangeText={setLiters}
@@ -1085,7 +1071,7 @@ export default function WalletDashboardScreen() {
             {lastSlip && (
               <Pressable
                 onPress={() => setShowReceiptModal(true)}
-                style={[styles.slipButton, { borderColor: theme.borderHairline }]}
+                style={styles.slipButton}
               >
                 <Ionicons name="receipt-outline" size={16} color={theme.accentPrimary} style={{ marginRight: 6 }} />
                 <ThemedText style={{ color: theme.accentPrimary, fontSize: 13, fontWeight: '600' }}>
@@ -1131,7 +1117,6 @@ export default function WalletDashboardScreen() {
                       styles.presetChip,
                       {
                         backgroundColor: active ? theme.accentPrimary : theme.background,
-                        borderColor: active ? theme.accentPrimary : theme.borderHairline,
                         flex: 1,
                       },
                     ]}
@@ -1165,7 +1150,6 @@ export default function WalletDashboardScreen() {
                         styles.presetChip,
                         {
                           backgroundColor: active ? 'rgba(216,128,74,0.2)' : theme.background,
-                          borderColor: active ? theme.accentPrimary : theme.borderHairline,
                         },
                       ]}
                     >
@@ -1181,7 +1165,7 @@ export default function WalletDashboardScreen() {
                   );
                 })}
               </View>
-              <View style={[styles.customLitersInput, { borderColor: theme.borderHairline }]}>
+              <View style={[styles.customLitersInput, { backgroundColor: theme.background }]}>
                 <TextInput
                   value={topupAmount}
                   onChangeText={setTopupAmount}
@@ -1260,7 +1244,7 @@ export default function WalletDashboardScreen() {
                   value={pumpNumber}
                   onChangeText={setPumpNumber}
                   keyboardType="numeric"
-                  style={[styles.meterInput, { color: theme.text, borderColor: theme.borderHairline }]}
+                  style={[styles.meterInput, { color: theme.text, backgroundColor: theme.background }]}
                 />
               </View>
               <View style={{ flex: 1 }}>
@@ -1271,7 +1255,7 @@ export default function WalletDashboardScreen() {
                   value={totalPosVol}
                   onChangeText={setTotalPosVol}
                   keyboardType="numeric"
-                  style={[styles.meterInput, { color: theme.text, borderColor: theme.borderHairline }]}
+                  style={[styles.meterInput, { color: theme.text, backgroundColor: theme.background }]}
                 />
               </View>
             </View>
@@ -1285,7 +1269,7 @@ export default function WalletDashboardScreen() {
                   value={startMeter}
                   onChangeText={setStartMeter}
                   keyboardType="numeric"
-                  style={[styles.meterInput, { color: theme.text, borderColor: theme.borderHairline }]}
+                  style={[styles.meterInput, { color: theme.text, backgroundColor: theme.background }]}
                 />
               </View>
               <View style={{ flex: 1 }}>
@@ -1296,7 +1280,7 @@ export default function WalletDashboardScreen() {
                   value={endMeter}
                   onChangeText={setEndMeter}
                   keyboardType="numeric"
-                  style={[styles.meterInput, { color: theme.text, borderColor: theme.borderHairline }]}
+                  style={[styles.meterInput, { color: theme.text, backgroundColor: theme.background }]}
                 />
               </View>
             </View>
@@ -1383,7 +1367,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: Spacing.screenPadding,
     paddingTop: Spacing.md,
     maxWidth: 600,
     width: '100%',
@@ -1412,12 +1396,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: Radius.pill,
-    borderWidth: 1,
   },
   adminTabs: {
     padding: 12,
     borderRadius: Radius.card,
-    borderWidth: 1,
     marginBottom: Spacing.lg,
   },
   adminTabGrid: {
@@ -1429,7 +1411,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: Radius.sm,
-    borderWidth: 1,
   },
 
   // Revolut-Style Virtual Card
@@ -1437,12 +1418,11 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xl,
   },
   revolutCard: {
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: 20,
+    borderRadius: Radius.card,
+    padding: 22,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.35,
     shadowRadius: 14,
     elevation: 8,
   },
@@ -1495,8 +1475,6 @@ const styles = StyleSheet.create({
     height: 26,
     borderRadius: 5,
     backgroundColor: 'rgba(216,128,74,0.25)',
-    borderWidth: 1,
-    borderColor: '#D8804A',
     overflow: 'hidden',
     justifyContent: 'center',
   },
@@ -1566,7 +1544,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: Radius.pill,
-    borderWidth: 1,
   },
 
   // Action Row
@@ -1610,7 +1587,6 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 14,
     borderRadius: Radius.card,
-    borderWidth: 1,
   },
   metricHeader: {
     flexDirection: 'row',
@@ -1651,16 +1627,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 24,
     borderRadius: Radius.card,
-    borderWidth: 1,
   },
   txnRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 14,
-    borderRadius: Radius.chip,
+    borderRadius: Radius.card,
     marginBottom: 8,
-    borderWidth: 1,
   },
   txnLeft: {
     flexDirection: 'row',
@@ -1690,8 +1664,8 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalSheet: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: Radius.modal,
+    borderTopRightRadius: Radius.modal,
     padding: Spacing.xl,
     paddingBottom: 36,
   },
@@ -1720,7 +1694,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 12,
     borderRadius: Radius.chip,
-    borderWidth: 1,
   },
   presetRow: {
     flexDirection: 'row',
@@ -1733,13 +1706,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 10,
     borderRadius: Radius.chip,
-    borderWidth: 1,
   },
   customLitersInput: {
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: Radius.chip,
-    borderWidth: 1,
     overflow: 'hidden',
   },
   numericInput: {
@@ -1780,7 +1751,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 12,
     borderRadius: Radius.pill,
-    borderWidth: 1,
     marginTop: 10,
   },
   meterInputRow: {
@@ -1788,7 +1758,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   meterInput: {
-    borderWidth: 1,
     borderRadius: Radius.chip,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -1796,7 +1765,7 @@ const styles = StyleSheet.create({
   },
   receiptCard: {
     margin: 20,
-    borderRadius: 16,
+    borderRadius: Radius.card,
     padding: 20,
     alignSelf: 'center',
     maxWidth: 400,
@@ -1805,8 +1774,6 @@ const styles = StyleSheet.create({
   receiptHeader: {
     alignItems: 'center',
     paddingBottom: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
   },
   receiptBody: {
     paddingVertical: 14,

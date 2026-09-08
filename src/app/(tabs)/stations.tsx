@@ -154,7 +154,7 @@ export default function StationsScreen() {
         <View
           style={[
             styles.priceBannerCard,
-            { backgroundColor: '#161514', borderColor: 'rgba(216,128,74,0.3)' },
+            { backgroundColor: '#161514' },
           ]}
         >
           <View style={styles.priceCardHeader}>
@@ -202,7 +202,7 @@ export default function StationsScreen() {
         <View
           style={[
             styles.searchBox,
-            { backgroundColor: theme.backgroundElement, borderColor: theme.borderHairline },
+            { backgroundColor: theme.backgroundElement },
           ]}
         >
           <Ionicons name="search-outline" size={16} color={theme.textMuted} />
@@ -226,7 +226,6 @@ export default function StationsScreen() {
                   styles.cityChip,
                   {
                     backgroundColor: active ? theme.accentPrimary : theme.backgroundElement,
-                    borderColor: active ? theme.accentPrimary : theme.borderHairline,
                   },
                 ]}
               >
@@ -253,7 +252,7 @@ export default function StationsScreen() {
           <View
             style={[
               styles.emptyState,
-              { backgroundColor: theme.backgroundElement, borderColor: theme.borderHairline },
+              { backgroundColor: theme.backgroundElement },
             ]}
           >
             <Ionicons name="location-outline" size={40} color={theme.textMuted} />
@@ -268,7 +267,7 @@ export default function StationsScreen() {
                 key={station.id}
                 style={[
                   styles.stationCard,
-                  { backgroundColor: theme.backgroundElement, borderColor: theme.borderHairline },
+                  { backgroundColor: theme.backgroundElement },
                 ]}
               >
                 {/* Station Card Header */}
@@ -372,7 +371,7 @@ export default function StationsScreen() {
                     onPress={() => callStation(station.phone)}
                     style={[
                       styles.secondaryActionBtn,
-                      { borderColor: theme.borderHairline, backgroundColor: theme.background },
+                      { backgroundColor: theme.background },
                     ]}
                   >
                     <Ionicons name="call-outline" size={15} color={theme.text} />
@@ -392,7 +391,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: Spacing.screenPadding,
     paddingTop: Spacing.md,
     maxWidth: 600,
     width: '100%',
@@ -402,9 +401,8 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
   },
   priceBannerCard: {
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: 18,
+    borderRadius: Radius.card,
+    padding: 20,
     marginBottom: Spacing.lg,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
@@ -460,14 +458,13 @@ const styles = StyleSheet.create({
   priceDivider: {
     width: 1,
     height: 40,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(255,255,255,0.06)',
     marginHorizontal: 16,
   },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: Radius.chip,
-    borderWidth: 1,
     paddingHorizontal: 14,
     marginBottom: 10,
   },
@@ -486,22 +483,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: Radius.pill,
-    borderWidth: 1,
   },
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
     padding: 32,
     borderRadius: Radius.card,
-    borderWidth: 1,
   },
   stationsList: {
     gap: 12,
   },
   stationCard: {
-    padding: 16,
+    padding: 18,
     borderRadius: Radius.card,
-    borderWidth: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.15,
@@ -581,6 +575,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 22,
-    borderWidth: 1,
   },
 });

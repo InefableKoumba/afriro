@@ -312,12 +312,6 @@ export default function CardsScreen() {
                 styles.virtualCard,
                 {
                   backgroundColor: '#161514',
-                  borderColor:
-                    activeCard.status === 'Active'
-                      ? 'rgba(216,128,74,0.35)'
-                      : activeCard.status === 'InStock'
-                      ? 'rgba(255,255,255,0.1)'
-                      : 'rgba(239,68,68,0.4)',
                 },
               ]}
             >
@@ -429,7 +423,6 @@ export default function CardsScreen() {
                           backgroundColor: isSelected
                             ? 'rgba(216,128,74,0.2)'
                             : theme.backgroundElement,
-                          borderColor: isSelected ? theme.accentPrimary : theme.borderHairline,
                         },
                       ]}
                     >
@@ -467,7 +460,7 @@ export default function CardsScreen() {
               disabled={freezeLoading === activeCard.cardUid}
               style={[
                 styles.actionBtn,
-                { backgroundColor: theme.backgroundElement, borderColor: theme.borderHairline },
+                { backgroundColor: theme.backgroundElement },
               ]}
             >
               {freezeLoading === activeCard.cardUid ? (
@@ -495,7 +488,7 @@ export default function CardsScreen() {
                 }}
                 style={[
                   styles.actionBtn,
-                  { backgroundColor: theme.backgroundElement, borderColor: theme.borderHairline },
+                  { backgroundColor: theme.backgroundElement },
                 ]}
               >
                 <Ionicons name="options-outline" size={20} color={theme.accentPrimary} />
@@ -513,7 +506,7 @@ export default function CardsScreen() {
               }
               style={[
                 styles.actionBtn,
-                { backgroundColor: theme.backgroundElement, borderColor: theme.borderHairline },
+                { backgroundColor: theme.backgroundElement },
               ]}
             >
               <Ionicons name="shield-checkmark-outline" size={20} color={theme.statusSuccess} />
@@ -529,7 +522,7 @@ export default function CardsScreen() {
           <View
             style={[
               styles.infoSectionCard,
-              { backgroundColor: theme.backgroundElement, borderColor: theme.borderHairline },
+              { backgroundColor: theme.backgroundElement },
             ]}
           >
             <ThemedText style={{ color: theme.text, fontSize: 15, fontWeight: '700', marginBottom: 12 }}>
@@ -552,7 +545,7 @@ export default function CardsScreen() {
               </View>
             </View>
 
-            <View style={[styles.limitRow, { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: theme.borderHairline }]}>
+            <View style={[styles.limitRow, { marginTop: 12, paddingTop: 12 }]}>
               <View>
                 <ThemedText type="caption" style={{ color: theme.textMuted }}>
                   Plafond Hebdomadaire
@@ -585,7 +578,7 @@ export default function CardsScreen() {
             <View
               style={[
                 styles.searchBar,
-                { backgroundColor: theme.backgroundElement, borderColor: theme.borderHairline },
+                { backgroundColor: theme.backgroundElement },
               ]}
             >
               <Ionicons name="search-outline" size={16} color={theme.textMuted} />
@@ -615,7 +608,6 @@ export default function CardsScreen() {
                       styles.filterChip,
                       {
                         backgroundColor: active ? theme.accentPrimary : theme.backgroundElement,
-                        borderColor: active ? theme.accentPrimary : theme.borderHairline,
                       },
                     ]}
                   >
@@ -641,7 +633,7 @@ export default function CardsScreen() {
                   key={c.cardUid}
                   style={[
                     styles.directoryCard,
-                    { backgroundColor: theme.backgroundElement, borderColor: theme.borderHairline },
+                    { backgroundColor: theme.backgroundElement },
                   ]}
                 >
                   <View style={styles.dirLeft}>
@@ -731,7 +723,7 @@ export default function CardsScreen() {
                 placeholder="Ex: 04A1B2C3D4E5F6"
                 placeholderTextColor={theme.textMuted}
                 autoCapitalize="characters"
-                style={[styles.inputBox, { color: theme.text, borderColor: theme.borderHairline }]}
+                style={[styles.inputBox, { color: theme.text, backgroundColor: theme.background }]}
               />
             </View>
 
@@ -745,7 +737,7 @@ export default function CardsScreen() {
                 placeholder="Ex: 542-CG-04"
                 placeholderTextColor={theme.textMuted}
                 autoCapitalize="characters"
-                style={[styles.inputBox, { color: theme.text, borderColor: theme.borderHairline }]}
+                style={[styles.inputBox, { color: theme.text, backgroundColor: theme.background }]}
               />
             </View>
 
@@ -758,7 +750,7 @@ export default function CardsScreen() {
                 onChangeText={setNewDriver}
                 placeholder="Ex: Serge Moungalla"
                 placeholderTextColor={theme.textMuted}
-                style={[styles.inputBox, { color: theme.text, borderColor: theme.borderHairline }]}
+                style={[styles.inputBox, { color: theme.text, backgroundColor: theme.background }]}
               />
             </View>
 
@@ -817,7 +809,6 @@ export default function CardsScreen() {
                         styles.chipBtn,
                         {
                           backgroundColor: active ? theme.accentPrimary : theme.background,
-                          borderColor: active ? theme.accentPrimary : theme.borderHairline,
                           flex: 1,
                         },
                       ]}
@@ -847,7 +838,7 @@ export default function CardsScreen() {
                 value={newDailyLimit}
                 onChangeText={setNewDailyLimit}
                 keyboardType="numeric"
-                style={[styles.inputBox, { color: theme.text, borderColor: theme.borderHairline }]}
+                style={[styles.inputBox, { color: theme.text, backgroundColor: theme.background }]}
               />
             </View>
 
@@ -860,7 +851,7 @@ export default function CardsScreen() {
                 value={newWeeklyLimit}
                 onChangeText={setNewWeeklyLimit}
                 keyboardType="numeric"
-                style={[styles.inputBox, { color: theme.text, borderColor: theme.borderHairline }]}
+                style={[styles.inputBox, { color: theme.text, backgroundColor: theme.background }]}
               />
             </View>
 
@@ -889,7 +880,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: Spacing.screenPadding,
     paddingTop: Spacing.md,
     maxWidth: 600,
     width: '100%',
@@ -912,9 +903,8 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
   },
   virtualCard: {
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: 20,
+    borderRadius: Radius.card,
+    padding: 22,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.35,
@@ -963,8 +953,6 @@ const styles = StyleSheet.create({
     height: 26,
     borderRadius: 5,
     backgroundColor: 'rgba(216,128,74,0.25)',
-    borderWidth: 1,
-    borderColor: '#D8804A',
     justifyContent: 'center',
   },
   chipHLine: {
@@ -1033,7 +1021,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: Radius.pill,
-    borderWidth: 1,
   },
 
   // Actions Container
@@ -1046,10 +1033,9 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 6,
     borderRadius: Radius.card,
-    borderWidth: 1,
   },
   actionBtnText: {
     color: '#FFFFFF',
@@ -1063,7 +1049,6 @@ const styles = StyleSheet.create({
   infoSectionCard: {
     padding: 16,
     borderRadius: Radius.card,
-    borderWidth: 1,
     marginBottom: Spacing.lg,
   },
   limitRow: {
@@ -1088,7 +1073,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: Radius.chip,
-    borderWidth: 1,
     paddingHorizontal: 12,
     marginBottom: 12,
   },
@@ -1107,15 +1091,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: Radius.pill,
-    borderWidth: 1,
   },
   directoryCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 14,
-    borderRadius: Radius.chip,
-    borderWidth: 1,
+    borderRadius: Radius.card,
     marginBottom: 8,
   },
   dirLeft: {
@@ -1143,8 +1125,8 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalSheet: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: Radius.modal,
+    borderTopRightRadius: Radius.modal,
     padding: Spacing.xl,
     paddingBottom: 36,
   },
@@ -1163,7 +1145,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   inputBox: {
-    borderWidth: 1,
     borderRadius: Radius.chip,
     paddingHorizontal: 14,
     paddingVertical: 12,
@@ -1178,6 +1159,5 @@ const styles = StyleSheet.create({
   chipBtn: {
     paddingVertical: 10,
     borderRadius: Radius.chip,
-    borderWidth: 1,
   },
 });

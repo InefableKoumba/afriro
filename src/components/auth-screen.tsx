@@ -122,7 +122,6 @@ export default function AuthScreen({ onSuccess, onOpenOnboarding }: AuthScreenPr
               styles.card,
               {
                 backgroundColor: theme.backgroundElement,
-                borderColor: theme.borderHairline,
               },
             ]}
           >
@@ -131,7 +130,7 @@ export default function AuthScreen({ onSuccess, onOpenOnboarding }: AuthScreenPr
             </ThemedText>
 
             {error && (
-              <View style={[styles.errorBox, { borderColor: theme.statusError }]}>
+              <View style={styles.errorBox}>
                 <Ionicons name="alert-circle-outline" size={16} color={theme.statusError} />
                 <ThemedText
                   type="caption"
@@ -156,7 +155,6 @@ export default function AuthScreen({ onSuccess, onOpenOnboarding }: AuthScreenPr
                     styles.inputContainer,
                     {
                       backgroundColor: theme.backgroundSelected,
-                      borderColor: theme.borderSubtle,
                     },
                   ]}
                 >
@@ -194,7 +192,6 @@ export default function AuthScreen({ onSuccess, onOpenOnboarding }: AuthScreenPr
                     styles.inputContainer,
                     {
                       backgroundColor: theme.backgroundSelected,
-                      borderColor: theme.borderSubtle,
                     },
                   ]}
                 >
@@ -277,10 +274,6 @@ export default function AuthScreen({ onSuccess, onOpenOnboarding }: AuthScreenPr
                       styles.quickCard,
                       {
                         backgroundColor: theme.backgroundElement,
-                        borderColor:
-                          quickLoadingRole === prof.role
-                            ? theme.accentPrimary
-                            : theme.borderHairline,
                         opacity: pressed ? 0.8 : 1,
                       },
                     ]}
@@ -323,7 +316,6 @@ export default function AuthScreen({ onSuccess, onOpenOnboarding }: AuthScreenPr
                             styles.loginChip,
                             {
                               backgroundColor: theme.backgroundSelected,
-                              borderColor: theme.borderSubtle,
                             },
                           ]}
                         >
@@ -384,7 +376,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: Spacing.lg,
+    paddingHorizontal: Spacing.screenPadding,
+    paddingVertical: Spacing.lg,
     maxWidth: 500,
     width: '100%',
     alignSelf: 'center',
@@ -415,7 +408,6 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: Radius.card,
     padding: Spacing.md,
-    borderWidth: 1,
     marginBottom: Spacing.lg,
   },
   errorBox: {
@@ -425,7 +417,6 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: Radius.chip,
     backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    borderWidth: 1,
     marginTop: 10,
   },
   formGroup: {
@@ -437,7 +428,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     height: 48,
     borderRadius: Radius.chip,
-    borderWidth: 1,
     paddingHorizontal: Spacing.md,
   },
   input: {
@@ -467,9 +457,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   quickCard: {
-    borderRadius: Radius.chip,
-    borderWidth: 1,
-    padding: 12,
+    borderRadius: Radius.card,
+    padding: 14,
   },
   quickCardHeader: {
     flexDirection: 'row',
@@ -493,10 +482,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
     borderRadius: Radius.pill,
-    borderWidth: 1,
   },
   onboardingLink: {
     flexDirection: 'row',

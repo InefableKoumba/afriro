@@ -103,7 +103,9 @@ export default function TabLayout() {
         tabBarInactiveTintColor: theme.textMuted,
         tabBarStyle: {
           backgroundColor: theme.backgroundElement,
-          borderTopColor: theme.borderHairline,
+          borderTopWidth: 0,
+          elevation: 0,
+          shadowOpacity: 0,
           height: 56 + Math.max(insets.bottom, 12),
           paddingBottom: Math.max(insets.bottom, 8),
           paddingTop: 6,
