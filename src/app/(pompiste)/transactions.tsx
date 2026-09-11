@@ -18,6 +18,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { localDb, OfflineTransaction } from '@/services/local-db';
 import { mobileAuth, MobileUserSession } from '@/services/auth';
 import { syncOfflineLedger } from '@/services/sync-service';
+import { API_BASE_URL } from '@/constants/api';
 
 export default function PompisteTransactionsScreen() {
   const scheme = useColorScheme();
@@ -26,6 +27,7 @@ export default function PompisteTransactionsScreen() {
   const insets = useSafeAreaInsets();
 
   const [user, setUser] = useState<MobileUserSession | null>(mobileAuth.getUser());
+  const [stationName, setStationName] = useState<string>("Afric' Station");
   const [allTxns, setAllTxns] = useState<OfflineTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -45,11 +47,68 @@ export default function PompisteTransactionsScreen() {
 
   const loadTransactions = useCallback(async () => {
     try {
-      const attendantId = user?.userId || '55555555-5555-5555-5555-555555555555';
-      const stationId = user?.stationId || '11111111-1111-1111-1111-111111111111';
+      const attendantId = user?.userId;
+      const stationId = user?.stationId;
 
-      const txns = await localDb.getTransactionsByAttendantAndStation(attendantId, stationId);
-      setAllTxns(txns);
+      // 1. Fetch station details if assigned
+      if (stationId) {
+        try {
+          const sRes = await fetch(`${API_BASE_URL}/api/stations/${stationId}`);
+          if (sRes.ok) {
+            const sData = await sRes.json();
+            if (sData.stationName) {
+              setStationName(sData.stationName);
+            }
+          }
+        } catch {}
+      }
+
+      // 2. Fetch local SQLite transactions
+      const localTxns = await localDb.getTransactionsByAttendantAndStation(attendantId, stationId);
+
+      // 3. Fetch remote transactions if online
+      let remoteTxns: OfflineTransaction[] = [];
+      try {
+        const queryParams = new URLSearchParams();
+        if (attendantId) queryParams.append('attendantId', attendantId);
+        if (stationId) queryParams.append('stationId', stationId);
+
+        const rRes = await fetch(`${API_BASE_URL}/api/transactions?${queryParams.toString()}`);
+        if (rRes.ok) {
+          const rData = await rRes.json();
+          if (Array.isArray(rData)) {
+            remoteTxns = rData.map((t: any) => ({
+              id: t.id,
+              cardUid: t.cardUid,
+              deviceId: t.deviceId,
+              stationId: t.stationId,
+              attendantId: t.attendantId,
+              amountFcfa: Number(t.amountFcfa) || 0,
+              liters: Number(t.liters) || 0,
+              fuelType: t.fuelType,
+              offlineCounter: Number(t.offlineCounter) || 0,
+              signature: t.transactionSignature || '',
+              timestamp: t.timestamp,
+              isSynced: 1,
+            }));
+          }
+        }
+      } catch {}
+
+      // 4. Merge transactions: local pending takes precedence over remote
+      const txnMap = new Map<string, OfflineTransaction>();
+      for (const t of remoteTxns) {
+        txnMap.set(t.id, t);
+      }
+      for (const t of localTxns) {
+        txnMap.set(t.id, t);
+      }
+
+      const combined = Array.from(txnMap.values()).sort(
+        (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      );
+
+      setAllTxns(combined);
     } catch (err) {
       console.warn('Error fetching attendant transactions:', err);
     } finally {
@@ -70,7 +129,7 @@ export default function PompisteTransactionsScreen() {
   const handleSync = async () => {
     setSyncing(true);
     try {
-      const res = await syncOfflineLedger();
+      const res = await syncOfflineLedger('POS-BZV-01', user?.stationId || undefined);
       if (res.acceptedCount > 0) {
         Alert.alert('Succès', `${res.acceptedCount} transaction(s) synchronisée(s).`);
       } else {
@@ -126,7 +185,7 @@ export default function PompisteTransactionsScreen() {
               Mes Transactions d'Agence
             </ThemedText>
             <ThemedText style={[styles.headerSub, { color: theme.textMuted }]}>
-              Ventes effectuées par vous à la station Afric' Poto-Poto
+              Ventes effectuées par vous à {stationName}
             </ThemedText>
           </View>
 
@@ -368,7 +427,15 @@ export default function PompisteTransactionsScreen() {
       {/* ======================================================= */}
       <Modal visible={!!selectedTx} transparent animationType="slide">
         <View style={styles.modalBackdrop}>
-          <View style={[styles.modalSheet, { backgroundColor: dark ? '#1A1817' : '#FFFFFF' }]}>
+          <View
+            style={[
+              styles.modalSheet,
+              {
+                backgroundColor: dark ? '#1A1817' : '#FFFFFF',
+                paddingBottom: Math.max(insets.bottom, 20) + 16,
+              },
+            ]}
+          >
             <View style={styles.modalHandle} />
 
             <View style={styles.modalHeader}>

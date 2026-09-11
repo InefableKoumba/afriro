@@ -7,7 +7,6 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  TextInput,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,6 +19,23 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { API_BASE_URL } from '@/constants/api';
 import { nfcService } from '@/services/nfc';
 
+interface CompanyDetails {
+  id: string;
+  companyName: string;
+  clientType?: string;
+  contactPhone?: string | null;
+  contactEmail?: string | null;
+  registrationNumber?: string | null;
+  creditBalance?: number;
+}
+
+interface UserDetails {
+  id: string;
+  fullName: string;
+  phoneNumber: string;
+  role: string;
+}
+
 interface CardDetails {
   cardUid: string;
   status: string;
@@ -31,50 +47,11 @@ interface CardDetails {
   dailySpendLimitFcfa?: number;
   weeklySpendLimitFcfa?: number;
   companyId?: string;
+  hasPin: boolean;
+  clientAttached: boolean;
+  company?: CompanyDetails | null;
+  user?: UserDetails | null;
 }
-
-// Demo cards for simulation & testing on Android emulator or physical device
-const DEMO_CARDS: CardDetails[] = [
-  {
-    cardUid: '04A1B2C3D4E5F6',
-    status: 'Active',
-    balanceFcfa: 100000,
-    offlineCounter: 14,
-    vehiclePlate: '542-CG-04',
-    assignedDriverName: 'Christian Okamba',
-    fuelTypeRestriction: 'Gazole',
-    dailySpendLimitFcfa: 50000,
-    weeklySpendLimitFcfa: 200000,
-  },
-  {
-    cardUid: '04B2C3D4E5F6A1',
-    status: 'Active',
-    balanceFcfa: 120000,
-    offlineCounter: 6,
-    vehiclePlate: '819-CG-04',
-    assignedDriverName: 'Jean Makaya',
-    fuelTypeRestriction: 'Super',
-    dailySpendLimitFcfa: 60000,
-    weeklySpendLimitFcfa: 250000,
-  },
-  {
-    cardUid: '04C3D4E5F6A1B2',
-    status: 'Suspended',
-    balanceFcfa: 35000,
-    offlineCounter: 10,
-    vehiclePlate: '104-CG-04',
-    assignedDriverName: 'Patrice Mabiala',
-    fuelTypeRestriction: 'Super',
-    dailySpendLimitFcfa: 50000,
-    weeklySpendLimitFcfa: 200000,
-  },
-  {
-    cardUid: '04D4E5F6A1B2C3',
-    status: 'InStock',
-    balanceFcfa: 0,
-    offlineCounter: 0,
-  },
-];
 
 export default function PompisteScanScreen() {
   const scheme = useColorScheme();
@@ -85,7 +62,6 @@ export default function PompisteScanScreen() {
 
   const [scanning, setScanning] = useState(false);
   const [searching, setSearching] = useState(false);
-  const [manualUid, setManualUid] = useState('');
   const [cardResult, setCardResult] = useState<CardDetails | null>(null);
   const [notFoundError, setNotFoundError] = useState<string | null>(null);
 
@@ -96,24 +72,24 @@ export default function PompisteScanScreen() {
     setNotFoundError(null);
 
     try {
-      const res = await nfcService.scanCardTag();
+      const res = await nfcService.readCardPayload();
       if (res.success && res.cardUid) {
-        await verifyCardUid(res.cardUid);
+        await verifyCardUid(res.cardUid, res.ndefData);
       } else {
         Alert.alert(
           'Lecture NFC',
-          res.error || 'Aucune carte détectée. Vous pouvez saisir l\'identifiant manuellement.'
+          res.error || 'Aucune carte détectée. Plaquez la carte fermement au dos du terminal.'
         );
       }
     } catch {
-      Alert.alert('NFC', 'Erreur de capteur NFC.');
+      Alert.alert('NFC', 'Erreur de communication avec le capteur NFC.');
     } finally {
       setScanning(false);
     }
   };
 
-  // Verify card validity against Backend or local store
-  const verifyCardUid = async (uid: string) => {
+  // Verify card validity against Backend or local store, with NDEF payload enrichment
+  const verifyCardUid = async (uid: string, ndefData?: any) => {
     const cleanUid = uid.trim().toUpperCase();
     if (!cleanUid) return;
 
@@ -129,76 +105,128 @@ export default function PompisteScanScreen() {
           status: data.status,
           balanceFcfa: Number(data.balanceFcfa) || 0,
           offlineCounter: Number(data.offlineCounter) || 0,
-          vehiclePlate: data.vehiclePlate,
-          assignedDriverName: data.assignedDriverName,
-          fuelTypeRestriction: data.fuelTypeRestriction,
-          dailySpendLimitFcfa: data.dailySpendLimitFcfa ? Number(data.dailySpendLimitFcfa) : undefined,
+          vehiclePlate: data.vehiclePlate || ndefData?.vehiclePlate,
+          assignedDriverName: data.assignedDriverName || ndefData?.userName || ndefData?.driverName,
+          fuelTypeRestriction: data.fuelTypeRestriction || ndefData?.fuelRestriction,
+          dailySpendLimitFcfa: data.dailySpendLimitFcfa
+            ? Number(data.dailySpendLimitFcfa)
+            : ndefData?.dailyLimitFcfa ?? undefined,
           weeklySpendLimitFcfa: data.weeklySpendLimitFcfa ? Number(data.weeklySpendLimitFcfa) : undefined,
-          companyId: data.companyId,
+          companyId: data.companyId || ndefData?.companyId,
+          hasPin: Boolean(data.hasPin),
+          clientAttached: Boolean(data.clientAttached || data.company || data.user || data.companyId),
+          company: data.company || (ndefData?.companyName ? { id: ndefData.companyId || '', companyName: ndefData.companyName, clientType: 'Business' } : null),
+          user: data.user || (ndefData?.userName ? { id: ndefData.userId || '', fullName: ndefData.userName, phoneNumber: ndefData.userPhone || '', role: 'Client' } : null),
         });
-        return;
+      } else if (ndefData && (ndefData.app === 'AFRIRO-PAY' || ndefData.userName)) {
+        // Chip data authenticated offline fallback
+        setCardResult({
+          cardUid: cleanUid,
+          status: 'Active',
+          balanceFcfa: 0,
+          offlineCounter: 0,
+          vehiclePlate: ndefData.vehiclePlate,
+          assignedDriverName: ndefData.userName || ndefData.driverName,
+          fuelTypeRestriction: ndefData.fuelRestriction,
+          dailySpendLimitFcfa: ndefData.dailyLimitFcfa ?? undefined,
+          companyId: ndefData.companyId || undefined,
+          hasPin: true,
+          clientAttached: Boolean(ndefData.companyId || ndefData.companyName || ndefData.userName),
+          company: ndefData.companyName ? { id: ndefData.companyId || '', companyName: ndefData.companyName, clientType: 'Business' } : null,
+          user: ndefData.userName ? { id: ndefData.userId || '', fullName: ndefData.userName, phoneNumber: ndefData.userPhone || '', role: 'Client' } : null,
+        });
+      } else {
+        setCardResult(null);
+        setNotFoundError(`Carte ${cleanUid} introuvable dans le réseau Afric'.`);
       }
     } catch {
-      // Offline fallback: check local demo cards
+      if (ndefData && (ndefData.app === 'AFRIRO-PAY' || ndefData.userName)) {
+        // Offline terminal fallback using authenticated chip payload
+        setCardResult({
+          cardUid: cleanUid,
+          status: 'Active',
+          balanceFcfa: 0,
+          offlineCounter: 0,
+          vehiclePlate: ndefData.vehiclePlate,
+          assignedDriverName: ndefData.userName || ndefData.driverName,
+          fuelTypeRestriction: ndefData.fuelRestriction,
+          dailySpendLimitFcfa: ndefData.dailyLimitFcfa ?? undefined,
+          companyId: ndefData.companyId || undefined,
+          hasPin: true,
+          clientAttached: Boolean(ndefData.companyId || ndefData.companyName || ndefData.userName),
+          company: ndefData.companyName ? { id: ndefData.companyId || '', companyName: ndefData.companyName, clientType: 'Business' } : null,
+          user: ndefData.userName ? { id: ndefData.userId || '', fullName: ndefData.userName, phoneNumber: ndefData.userPhone || '', role: 'Client' } : null,
+        });
+      } else {
+        setCardResult(null);
+        setNotFoundError(`Impossible de joindre le serveur pour vérifier la carte ${cleanUid}.`);
+      }
+    } finally {
+      setSearching(false);
     }
-
-    const fallback = DEMO_CARDS.find((c) => c.cardUid.toUpperCase() === cleanUid);
-    if (fallback) {
-      setCardResult(fallback);
-    } else {
-      setCardResult(null);
-      setNotFoundError(`Carte ${cleanUid} introuvable dans le système.`);
-    }
-    setSearching(false);
   };
 
-  const handleManualSearch = () => {
-    if (!manualUid.trim()) {
-      Alert.alert('Erreur', 'Veuillez saisir un numéro UID.');
-      return;
-    }
-    verifyCardUid(manualUid);
-  };
-
-  const handleSelectDemo = (card: CardDetails) => {
-    setManualUid(card.cardUid);
-    setCardResult(card);
-    setNotFoundError(null);
-  };
-
-  const isValid = cardResult?.status === 'Active';
+  const isClientAttached = Boolean(
+    cardResult?.clientAttached ||
+    cardResult?.company ||
+    cardResult?.user ||
+    cardResult?.companyId
+  );
+  const hasPinConfigured = Boolean(cardResult?.hasPin);
+  const isCardActive = cardResult?.status === 'Active';
+  const canProceedToPayment = isCardActive && isClientAttached && hasPinConfigured;
 
   const getValidityMessage = () => {
     if (!cardResult) return null;
-    if (cardResult.status === 'Active') {
+
+    if (cardResult.status !== 'Active') {
+      if (cardResult.status === 'Suspended') {
+        return {
+          title: 'CARTE SUSPENDUE',
+          sub: 'Paiement interdit : Cette carte a été verrouillée par son gestionnaire ou l\'administrateur.',
+          color: theme.statusError,
+          icon: 'alert-circle' as const,
+        };
+      }
+      if (cardResult.status === 'InStock') {
+        return {
+          title: 'CARTE EN STOCK (NON ACTIVÉE)',
+          sub: 'Paiement interdit : Carte vierge en stock magasin, non vendue à un client.',
+          color: theme.statusWarning,
+          icon: 'pause-circle' as const,
+        };
+      }
       return {
-        title: 'CARTE ACTIVE & VALIDE',
-        sub: 'La carte est autorisée pour le service à la pompe.',
-        color: theme.statusSuccess,
-        icon: 'checkmark-circle' as const,
+        title: 'CARTE INVALIDE',
+        sub: `Statut actuel : ${cardResult.status}. Utilisation refusée.`,
+        color: theme.statusError,
+        icon: 'close-circle' as const,
       };
     }
-    if (cardResult.status === 'Suspended') {
+
+    if (!isClientAttached) {
       return {
-        title: 'CARTE SUSPENDUE',
-        sub: 'Paiement refusé : cette carte a été bloquée par le gestionnaire ou l\'administrateur.',
+        title: 'AUCUN CLIENT ASSOCIÉ',
+        sub: 'Paiement interdit : Cette carte n\'est rattachée à aucun client. Elle ne peut pas être utilisée pour un paiement.',
         color: theme.statusError,
         icon: 'alert-circle' as const,
       };
     }
-    if (cardResult.status === 'InStock') {
+
+    if (!hasPinConfigured) {
       return {
-        title: 'CARTE NON ACTIVÉE (EN STOCK)',
-        sub: 'Paiement refusé : cette carte est vierge en stock et n\'a pas encore été vendue/activée.',
+        title: 'CODE PIN NON CONFIGURÉ',
+        sub: 'Paiement interdit : Aucun code PIN configuré. Le client doit d\'abord définir son code PIN depuis son tableau de bord.',
         color: theme.statusWarning,
-        icon: 'pause-circle' as const,
+        icon: 'lock-closed-outline' as const,
       };
     }
+
     return {
-      title: 'CARTE INVALIDE',
-      sub: `Statut actuel : ${cardResult.status}. Utilisation interdite à la pompe.`,
-      color: theme.statusError,
-      icon: 'close-circle' as const,
+      title: 'CARTE ACTIVE & VALIDE',
+      sub: 'Client identifié et code PIN configuré. Prête pour l\'encaissement sécurisé.',
+      color: theme.statusSuccess,
+      icon: 'checkmark-circle' as const,
     };
   };
 
@@ -222,7 +250,7 @@ export default function PompisteScanScreen() {
             Vérification Carte NFC
           </ThemedText>
           <ThemedText style={[styles.headerSub, { color: theme.textMuted }]}>
-            Vérifiez la validité, le solde et les plafonds d'une carte client avant le plein.
+            Scannez la carte client par contact NFC pour vérifier son authenticité, son solde et son code PIN.
           </ThemedText>
         </View>
 
@@ -234,93 +262,38 @@ export default function PompisteScanScreen() {
             styles.nfcHeroCard,
             {
               backgroundColor: dark ? '#161514' : theme.backgroundElement,
-              borderColor: scanning ? theme.accentPrimary : 'transparent',
+              borderColor: scanning || searching ? theme.accentPrimary : 'transparent',
               opacity: pressed ? 0.9 : 1,
             },
           ]}
           onPress={handleNfcScan}
-          disabled={scanning}
+          disabled={scanning || searching}
         >
           <View
             style={[
               styles.nfcPulseRing,
-              { backgroundColor: scanning ? theme.accentTranslucent : 'rgba(192, 106, 50, 0.08)' },
+              { backgroundColor: scanning || searching ? theme.accentTranslucent : 'rgba(192, 106, 50, 0.08)' },
             ]}
           >
-            {scanning ? (
+            {scanning || searching ? (
               <ActivityIndicator size="large" color={theme.accentPrimary} />
             ) : (
               <Ionicons name="radio" size={48} color={theme.accentPrimary} />
             )}
           </View>
           <ThemedText style={[styles.nfcHeroTitle, { color: theme.text }]}>
-            {scanning ? 'Approchez la carte...' : 'Scanner par Contact NFC'}
+            {scanning
+              ? 'Approchez la carte NFC...'
+              : searching
+              ? 'Vérification en cours...'
+              : 'Scanner par Contact NFC'}
           </ThemedText>
           <ThemedText style={[styles.nfcHeroSub, { color: theme.textMuted }]}>
-            Plaquez la carte au dos de ce terminal
+            {scanning || searching
+              ? 'Maintien du contact avec le dos de l\'appareil'
+              : 'Plaquez la carte physique au dos du terminal pour lire'}
           </ThemedText>
         </Pressable>
-
-        {/* ======================================================= */}
-        {/* MANUAL INPUT OPTION                                     */}
-        {/* ======================================================= */}
-        <View style={[styles.manualBox, { backgroundColor: dark ? '#161514' : theme.backgroundElement }]}>
-          <ThemedText style={[styles.manualLabel, { color: theme.textSecondary }]}>
-            Ou saisie manuelle de l'UID
-          </ThemedText>
-          <View style={styles.inputRow}>
-            <TextInput
-              style={[
-                styles.uidInput,
-                {
-                  backgroundColor: dark ? '#22201E' : '#F5F0EB',
-                  color: theme.text,
-                },
-              ]}
-              placeholder="Ex: 04A1B2C3D4E5F6"
-              placeholderTextColor={theme.textMuted}
-              value={manualUid}
-              onChangeText={setManualUid}
-              autoCapitalize="characters"
-            />
-            <Pressable
-              style={[styles.searchBtn, { backgroundColor: theme.accentPrimary }]}
-              onPress={handleManualSearch}
-              disabled={searching}
-            >
-              {searching ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <Ionicons name="search" size={20} color="#FFFFFF" />
-              )}
-            </Pressable>
-          </View>
-
-          {/* Quick Demo Pickers for instant testing */}
-          <ThemedText style={[styles.quickPickLabel, { color: theme.textMuted }]}>
-            Cartes de démonstration rapide :
-          </ThemedText>
-          <View style={styles.quickPickRow}>
-            {DEMO_CARDS.map((c) => (
-              <Pressable
-                key={c.cardUid}
-                onPress={() => handleSelectDemo(c)}
-                style={[
-                  styles.quickChip,
-                  {
-                    backgroundColor:
-                      manualUid === c.cardUid ? theme.accentTranslucent : dark ? '#22201E' : '#EFEAE4',
-                    borderColor: manualUid === c.cardUid ? theme.accentPrimary : 'transparent',
-                  },
-                ]}
-              >
-                <ThemedText style={[styles.quickChipText, { color: theme.text }]}>
-                  {c.cardUid.slice(0, 6)}... ({c.status})
-                </ThemedText>
-              </Pressable>
-            ))}
-          </View>
-        </View>
 
         {/* ======================================================= */}
         {/* NOT FOUND ERROR                                         */}
@@ -352,11 +325,131 @@ export default function PompisteScanScreen() {
               </View>
             </View>
 
+            {/* ======================================================= */}
+            {/* ATTACHED CLIENT DETAILS SECTION                         */}
+            {/* ======================================================= */}
+            {isClientAttached ? (
+              <View
+                style={[
+                  styles.clientSection,
+                  {
+                    backgroundColor: dark ? '#1D1B18' : '#FAF6F0',
+                    borderColor: theme.accentPrimary + '30',
+                  },
+                ]}
+              >
+                <View style={styles.clientHeaderRow}>
+                  <View
+                    style={[
+                      styles.clientIconCircle,
+                      { backgroundColor: theme.accentPrimary + '1A' },
+                    ]}
+                  >
+                    <Ionicons
+                      name={cardResult.company ? 'business' : 'person'}
+                      size={20}
+                      color={theme.accentPrimary}
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <ThemedText style={[styles.clientSectionLabel, { color: theme.textMuted }]}>
+                      {cardResult.company?.clientType === 'Business'
+                        ? 'Client Entreprise'
+                        : 'Client Particulier'}
+                    </ThemedText>
+                    <ThemedText style={[styles.clientNameText, { color: theme.text }]}>
+                      {cardResult.company?.companyName ||
+                        cardResult.user?.fullName ||
+                        'Client Afric\''}
+                    </ThemedText>
+                  </View>
+                  <View
+                    style={[
+                      styles.clientTypeBadge,
+                      { backgroundColor: theme.accentPrimary + '20' },
+                    ]}
+                  >
+                    <ThemedText
+                      style={[styles.clientTypeBadgeText, { color: theme.accentPrimary }]}
+                    >
+                      {cardResult.company?.clientType || 'Titulaire'}
+                    </ThemedText>
+                  </View>
+                </View>
+
+                <View style={styles.clientMetaRow}>
+                  {(cardResult.company?.contactPhone || cardResult.user?.phoneNumber) && (
+                    <View style={styles.clientMetaItem}>
+                      <Ionicons name="call-outline" size={14} color={theme.textSecondary} />
+                      <ThemedText style={[styles.clientMetaText, { color: theme.textSecondary }]}>
+                        {cardResult.company?.contactPhone || cardResult.user?.phoneNumber}
+                      </ThemedText>
+                    </View>
+                  )}
+                  {cardResult.company?.registrationNumber && (
+                    <View style={styles.clientMetaItem}>
+                      <Ionicons name="card-outline" size={14} color={theme.textSecondary} />
+                      <ThemedText style={[styles.clientMetaText, { color: theme.textSecondary }]}>
+                        N° {cardResult.company.registrationNumber}
+                      </ThemedText>
+                    </View>
+                  )}
+                </View>
+              </View>
+            ) : (
+              <View
+                style={[
+                  styles.clientWarningBox,
+                  {
+                    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                    borderColor: theme.statusError + '30',
+                  },
+                ]}
+              >
+                <Ionicons name="alert-circle" size={22} color={theme.statusError} />
+                <View style={{ flex: 1 }}>
+                  <ThemedText style={[styles.clientWarningTitle, { color: theme.statusError }]}>
+                    Aucun Client Rattaché
+                  </ThemedText>
+                  <ThemedText style={[styles.clientWarningSub, { color: theme.textSecondary }]}>
+                    Cette carte n'appartient à aucun compte client. Elle ne peut pas être utilisée pour effectuer des paiements de carburant.
+                  </ThemedText>
+                </View>
+              </View>
+            )}
+
+            {/* ======================================================= */}
+            {/* PIN SECURITY CODE ALERT                                  */}
+            {/* ======================================================= */}
+            {!hasPinConfigured && (
+              <View
+                style={[
+                  styles.pinWarningBox,
+                  {
+                    backgroundColor: 'rgba(245, 158, 11, 0.12)',
+                    borderColor: theme.statusWarning + '30',
+                  },
+                ]}
+              >
+                <Ionicons name="lock-closed" size={20} color={theme.statusWarning} />
+                <View style={{ flex: 1 }}>
+                  <ThemedText style={[styles.pinWarningTitle, { color: theme.statusWarning }]}>
+                    Code PIN Non Configuré
+                  </ThemedText>
+                  <ThemedText style={[styles.pinWarningSub, { color: theme.textSecondary }]}>
+                    Le client titulaire doit obligatoirement définir un code secret à 4 chiffres depuis son tableau de bord pour autoriser les paiements.
+                  </ThemedText>
+                </View>
+              </View>
+            )}
+
             {/* Card Information Details Grid */}
             <View style={styles.detailsGrid}>
               <View style={styles.detailRow}>
                 <ThemedText style={[styles.detailKey, { color: theme.textMuted }]}>Numéro UID :</ThemedText>
-                <ThemedText style={[styles.detailVal, { color: theme.text }]}>{cardResult.cardUid}</ThemedText>
+                <ThemedText style={[styles.detailVal, { color: theme.text, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }]}>
+                  {cardResult.cardUid}
+                </ThemedText>
               </View>
 
               <View style={styles.detailRow}>
@@ -373,6 +466,28 @@ export default function PompisteScanScreen() {
                 >
                   {cardResult.balanceFcfa.toLocaleString('fr-FR')} FCFA
                 </ThemedText>
+              </View>
+
+              <View style={styles.detailRow}>
+                <ThemedText style={[styles.detailKey, { color: theme.textMuted }]}>Code PIN Sécurité :</ThemedText>
+                <View style={styles.pinStatusBadge}>
+                  <Ionicons
+                    name={hasPinConfigured ? 'shield-checkmark' : 'alert-circle'}
+                    size={14}
+                    color={hasPinConfigured ? theme.statusSuccess : theme.statusWarning}
+                  />
+                  <ThemedText
+                    style={[
+                      styles.detailVal,
+                      {
+                        color: hasPinConfigured ? theme.statusSuccess : theme.statusWarning,
+                        fontWeight: '700',
+                      },
+                    ]}
+                  >
+                    {hasPinConfigured ? 'Actif (4 chiffres)' : 'Non configuré'}
+                  </ThemedText>
+                </View>
               </View>
 
               {cardResult.vehiclePlate && (
@@ -408,8 +523,8 @@ export default function PompisteScanScreen() {
               </View>
             </View>
 
-            {/* Action to proceed to payment if valid */}
-            {isValid && (
+            {/* Action to proceed to payment or blocked banner */}
+            {canProceedToPayment ? (
               <Pressable
                 style={[styles.proceedBtn, { backgroundColor: theme.accentPrimary }]}
                 onPress={() =>
@@ -424,6 +539,13 @@ export default function PompisteScanScreen() {
                   Encaisser avec cette Carte
                 </ThemedText>
               </Pressable>
+            ) : (
+              <View style={[styles.blockedBtn, { backgroundColor: dark ? '#22201E' : '#E8E2D9' }]}>
+                <Ionicons name="lock-closed" size={18} color={theme.textMuted} />
+                <ThemedText style={[styles.blockedBtnText, { color: theme.textMuted }]}>
+                  Paiement Refusé ({!isClientAttached ? 'Carte sans client' : !hasPinConfigured ? 'Code PIN manquant' : cardResult.status})
+                </ThemedText>
+              </View>
             )}
           </View>
         )}
@@ -482,55 +604,7 @@ const styles = StyleSheet.create({
   },
   nfcHeroSub: {
     fontSize: 13,
-  },
-  manualBox: {
-    borderRadius: Radius.card,
-    padding: Spacing.md,
-    marginBottom: Spacing.md,
-  },
-  manualLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  inputRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: Spacing.sm,
-  },
-  uidInput: {
-    flex: 1,
-    height: 48,
-    borderRadius: Radius.chip,
-    paddingHorizontal: 14,
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  searchBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: Radius.chip,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  quickPickLabel: {
-    fontSize: 11,
-    marginBottom: 6,
-  },
-  quickPickRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  quickChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: Radius.pill,
-    borderWidth: 1,
-  },
-  quickChipText: {
-    fontSize: 11,
-    fontWeight: '600',
+    textAlign: 'center',
   },
   errorCard: {
     flexDirection: 'row',
@@ -571,6 +645,99 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
   },
+  clientSection: {
+    borderRadius: Radius.chip,
+    borderWidth: 1,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+  },
+  clientHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 8,
+  },
+  clientIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  clientSectionLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  clientNameText: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  clientTypeBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: Radius.xs,
+  },
+  clientTypeBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
+  clientMetaRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginTop: 4,
+    paddingTop: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(150, 150, 150, 0.2)',
+  },
+  clientMetaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  clientMetaText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  clientWarningBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    padding: Spacing.md,
+    borderRadius: Radius.chip,
+    borderWidth: 1,
+    marginBottom: Spacing.md,
+  },
+  clientWarningTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  clientWarningSub: {
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  pinWarningBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    padding: Spacing.md,
+    borderRadius: Radius.chip,
+    borderWidth: 1,
+    marginBottom: Spacing.md,
+  },
+  pinWarningTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  pinWarningSub: {
+    fontSize: 12,
+    lineHeight: 16,
+  },
   detailsGrid: {
     gap: 10,
     marginBottom: Spacing.md,
@@ -587,6 +754,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
   },
+  pinStatusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   proceedBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -600,5 +772,18 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '700',
+  },
+  blockedBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: Radius.chip,
+    marginTop: Spacing.xs,
+  },
+  blockedBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
   },
 });

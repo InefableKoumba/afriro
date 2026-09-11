@@ -1,5 +1,6 @@
 import { localDb } from './local-db';
 import { API_ENDPOINTS } from '@/constants/api';
+import { mobileAuth } from './auth';
 
 export interface SyncResult {
   success: boolean;
@@ -10,8 +11,13 @@ export interface SyncResult {
 
 export async function syncOfflineLedger(
   deviceId: string = 'POS-BZV-01',
-  stationId: string = '11111111-1111-1111-1111-111111111111'
+  stationId?: string
 ): Promise<SyncResult> {
+  const resolvedStationId =
+    stationId ||
+    mobileAuth.getUser()?.stationId ||
+    '11111111-1111-1111-1111-111111111111';
+
   try {
     const pending = await localDb.getPendingTransactions();
     if (pending.length === 0) {
@@ -25,7 +31,7 @@ export async function syncOfflineLedger(
 
     const payload = {
       deviceId,
-      stationId,
+      stationId: resolvedStationId,
       transactions: pending.map((p) => ({
         cardUid: p.cardUid,
         amountFcfa: p.amountFcfa,

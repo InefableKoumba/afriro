@@ -392,7 +392,7 @@ export default function WalletDashboardScreen() {
 
   const maskedUid = activeCard
     ? `•••• ${activeCard.cardUid.slice(-4).toUpperCase()}`
-    : '•••• 8421';
+    : '•••• ----';
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background, paddingTop: insets.top }]}>
@@ -868,7 +868,15 @@ export default function WalletDashboardScreen() {
       {/* ======================================================= */}
       <Modal visible={showFuelModal} transparent animationType="slide">
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalSheet, { backgroundColor: theme.backgroundElement }]}>
+          <View
+            style={[
+              styles.modalSheet,
+              {
+                backgroundColor: theme.backgroundElement,
+                paddingBottom: Math.max(insets.bottom, 20) + 16,
+              },
+            ]}
+          >
             {/* Sheet Handle */}
             <View style={styles.sheetHandle} />
 
@@ -1038,7 +1046,15 @@ export default function WalletDashboardScreen() {
       {/* ======================================================= */}
       <Modal visible={showTopupModal} transparent animationType="slide">
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalSheet, { backgroundColor: theme.backgroundElement }]}>
+          <View
+            style={[
+              styles.modalSheet,
+              {
+                backgroundColor: theme.backgroundElement,
+                paddingBottom: Math.max(insets.bottom, 20) + 16,
+              },
+            ]}
+          >
             <View style={styles.sheetHandle} />
 
             <View style={styles.modalHeaderRow}>
@@ -1168,7 +1184,15 @@ export default function WalletDashboardScreen() {
       {/* ======================================================= */}
       <Modal visible={showShiftModal} transparent animationType="slide">
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalSheet, { backgroundColor: theme.backgroundElement }]}>
+          <View
+            style={[
+              styles.modalSheet,
+              {
+                backgroundColor: theme.backgroundElement,
+                paddingBottom: Math.max(insets.bottom, 20) + 16,
+              },
+            ]}
+          >
             <View style={styles.sheetHandle} />
 
             <View style={styles.modalHeaderRow}>

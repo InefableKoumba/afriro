@@ -28,60 +28,13 @@ interface StationItem {
   distanceKm?: string;
 }
 
-const DEFAULT_STATIONS: StationItem[] = [
-  {
-    id: 'STN-BZV-01',
-    stationName: "Afric' Station Poto-Poto",
-    city: 'Brazzaville',
-    address: 'Avenue de la Paix, Poto-Poto',
-    pumpCount: 8,
-    phone: '+242065000001',
-    gazoleLevelPct: 92,
-    superLevelPct: 88,
-    distanceKm: '1.2 km',
-  },
-  {
-    id: 'STN-BZV-02',
-    stationName: "Afric' Station Bacongo",
-    city: 'Brazzaville',
-    address: 'Boulevard des Armées, Bacongo',
-    pumpCount: 6,
-    phone: '+242065000002',
-    gazoleLevelPct: 85,
-    superLevelPct: 79,
-    distanceKm: '3.4 km',
-  },
-  {
-    id: 'STN-BZV-03',
-    stationName: "Afric' Station Moungali",
-    city: 'Brazzaville',
-    address: 'Rond-Point Moungali',
-    pumpCount: 6,
-    phone: '+242065000003',
-    gazoleLevelPct: 70,
-    superLevelPct: 94,
-    distanceKm: '4.8 km',
-  },
-  {
-    id: 'STN-PNR-01',
-    stationName: "Afric' Station Zone Portuaire",
-    city: 'Pointe-Noire',
-    address: 'Boulevard Maritime, Port Autonome',
-    pumpCount: 10,
-    phone: '+242065000004',
-    gazoleLevelPct: 96,
-    superLevelPct: 90,
-    distanceKm: 'Pointe-Noire',
-  },
-];
-
 export default function StationsScreen() {
   const scheme = useColorScheme();
   const dark = scheme !== 'light';
   const theme = dark ? Colors.dark : Colors.light;
   const insets = useSafeAreaInsets();
 
-  const [stations, setStations] = useState<StationItem[]>(DEFAULT_STATIONS);
+  const [stations, setStations] = useState<StationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [cityFilter, setCityFilter] = useState<'Tous' | 'Brazzaville' | 'Pointe-Noire'>('Tous');
@@ -89,20 +42,22 @@ export default function StationsScreen() {
   const loadStations = async () => {
     try {
       const res = await fetch(API_ENDPOINTS.STATIONS);
-      const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) {
-        setStations(
-          data.map((s, idx) => ({
-            ...s,
-            phone: s.phone || `+24206500000${idx + 1}`,
-            gazoleLevelPct: s.gazoleLevelPct || 85 + (idx % 12),
-            superLevelPct: s.superLevelPct || 80 + (idx % 15),
-            distanceKm: `${(idx * 1.5 + 1.2).toFixed(1)} km`,
-          }))
-        );
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setStations(
+            data.map((s, idx) => ({
+              ...s,
+              phone: s.phone || `+24206500000${idx + 1}`,
+              gazoleLevelPct: s.gazoleLevelPct || 85 + (idx % 12),
+              superLevelPct: s.superLevelPct || 80 + (idx % 15),
+              distanceKm: `${(idx * 1.5 + 1.2).toFixed(1)} km`,
+            }))
+          );
+        }
       }
     } catch {
-      // Keep defaults
+      // Retain existing state
     } finally {
       setLoading(false);
     }

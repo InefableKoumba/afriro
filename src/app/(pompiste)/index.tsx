@@ -19,6 +19,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AttendantSalesMetrics, localDb, OfflineTransaction } from '@/services/local-db';
 import { mobileAuth, MobileUserSession } from '@/services/auth';
 import { syncOfflineLedger } from '@/services/sync-service';
+import { API_BASE_URL } from '@/constants/api';
 
 export default function PompisteDashboardScreen() {
   const scheme = useColorScheme();
@@ -28,6 +29,7 @@ export default function PompisteDashboardScreen() {
   const router = useRouter();
 
   const [user, setUser] = useState<MobileUserSession | null>(mobileAuth.getUser());
+  const [stationName, setStationName] = useState<string>("Afric' Station");
   const [metrics, setMetrics] = useState<AttendantSalesMetrics>({
     todayTotalFcfa: 0,
     todayLiters: 0,
@@ -54,18 +56,116 @@ export default function PompisteDashboardScreen() {
 
   const loadData = useCallback(async () => {
     try {
-      const attendantId = user?.userId || '55555555-5555-5555-5555-555555555555';
-      const stationId = user?.stationId || '11111111-1111-1111-1111-111111111111';
+      const attendantId = user?.userId;
+      const stationId = user?.stationId;
 
-      const [salesMetrics, txns, pending] = await Promise.all([
-        localDb.getAttendantSalesMetrics(attendantId, stationId),
+      // 1. Fetch station details if assigned
+      if (stationId) {
+        try {
+          const sRes = await fetch(`${API_BASE_URL}/api/stations/${stationId}`);
+          if (sRes.ok) {
+            const sData = await sRes.json();
+            if (sData.stationName) {
+              setStationName(sData.stationName);
+            }
+          }
+        } catch {}
+      }
+
+      // 2. Fetch local SQLite transactions & pending count
+      const [localTxns, pending] = await Promise.all([
         localDb.getTransactionsByAttendantAndStation(attendantId, stationId),
         localDb.getPendingCount(),
       ]);
-
-      setMetrics(salesMetrics);
-      setRecentTxns(txns.slice(0, 5));
       setPendingCount(pending);
+
+      // 3. Fetch remote transactions for this attendant & station if online
+      let remoteTxns: OfflineTransaction[] = [];
+      try {
+        const queryParams = new URLSearchParams();
+        if (attendantId) queryParams.append('attendantId', attendantId);
+        if (stationId) queryParams.append('stationId', stationId);
+
+        const rRes = await fetch(`${API_BASE_URL}/api/transactions?${queryParams.toString()}`);
+        if (rRes.ok) {
+          const rData = await rRes.json();
+          if (Array.isArray(rData)) {
+            remoteTxns = rData.map((t: any) => ({
+              id: t.id,
+              cardUid: t.cardUid,
+              deviceId: t.deviceId,
+              stationId: t.stationId,
+              attendantId: t.attendantId,
+              amountFcfa: Number(t.amountFcfa) || 0,
+              liters: Number(t.liters) || 0,
+              fuelType: t.fuelType,
+              offlineCounter: Number(t.offlineCounter) || 0,
+              signature: t.transactionSignature || '',
+              timestamp: t.timestamp,
+              isSynced: 1,
+            }));
+          }
+        }
+      } catch {}
+
+      // 4. Merge transactions: local pending take precedence over synced
+      const txnMap = new Map<string, OfflineTransaction>();
+      for (const t of remoteTxns) {
+        txnMap.set(t.id, t);
+      }
+      for (const t of localTxns) {
+        txnMap.set(t.id, t);
+      }
+
+      const combined = Array.from(txnMap.values()).sort(
+        (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      );
+
+      setRecentTxns(combined.slice(0, 5));
+
+      // 5. Compute sales metrics (today vs yesterday)
+      const now = new Date();
+      const todayStr = now.toISOString().split('T')[0];
+      const yesterday = new Date(now.getTime() - 86400000);
+      const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+      let todayTotalFcfa = 0;
+      let todayLiters = 0;
+      let todayTxCount = 0;
+
+      let yesterdayTotalFcfa = 0;
+      let yesterdayLiters = 0;
+      let yesterdayTxCount = 0;
+
+      for (const t of combined) {
+        const tDate = (t.timestamp || '').split('T')[0];
+        if (tDate === todayStr) {
+          todayTotalFcfa += t.amountFcfa || 0;
+          todayLiters += t.liters || 0;
+          todayTxCount += 1;
+        } else if (tDate === yesterdayStr) {
+          yesterdayTotalFcfa += t.amountFcfa || 0;
+          yesterdayLiters += t.liters || 0;
+          yesterdayTxCount += 1;
+        }
+      }
+
+      const deltaFcfa = todayTotalFcfa - yesterdayTotalFcfa;
+      const deltaPercentage =
+        yesterdayTotalFcfa > 0
+          ? Math.round(((todayTotalFcfa - yesterdayTotalFcfa) / yesterdayTotalFcfa) * 1000) / 10
+          : 0;
+
+      setMetrics({
+        todayTotalFcfa,
+        todayLiters: Math.round(todayLiters * 100) / 100,
+        todayTxCount,
+        yesterdayTotalFcfa,
+        yesterdayLiters: Math.round(yesterdayLiters * 100) / 100,
+        yesterdayTxCount,
+        deltaFcfa,
+        deltaPercentage,
+      });
     } catch (err) {
       console.warn('Error loading pompiste dashboard data:', err);
     } finally {
@@ -86,7 +186,7 @@ export default function PompisteDashboardScreen() {
   const handleSync = async () => {
     setSyncing(true);
     try {
-      const res = await syncOfflineLedger();
+      const res = await syncOfflineLedger('POS-BZV-01', user?.stationId || undefined);
       if (res.acceptedCount > 0) {
         Alert.alert('Synchronisation Réussie', `${res.acceptedCount} transaction(s) téléversée(s) au serveur central.`);
       } else {
@@ -120,12 +220,12 @@ export default function PompisteDashboardScreen() {
               Poste Pompiste · Terminal SoftPOS
             </ThemedText>
             <ThemedText style={[styles.operatorName, { color: theme.text }]}>
-              {user?.fullName || 'Jean-Paul Samba'}
+              {user?.fullName || 'Opérateur Pompiste'}
             </ThemedText>
             <View style={styles.agencyRow}>
               <Ionicons name="location-outline" size={14} color={theme.accentPrimary} />
               <ThemedText style={[styles.agencyText, { color: theme.textSecondary }]}>
-                Afric' Station Poto-Poto · Pompe #03
+                {stationName} · Pompe Active
               </ThemedText>
             </View>
           </View>
@@ -423,7 +523,15 @@ export default function PompisteDashboardScreen() {
       {/* ======================================================= */}
       <Modal visible={!!selectedTx} transparent animationType="slide">
         <View style={styles.modalBackdrop}>
-          <View style={[styles.modalSheet, { backgroundColor: dark ? '#1A1817' : '#FFFFFF' }]}>
+          <View
+            style={[
+              styles.modalSheet,
+              {
+                backgroundColor: dark ? '#1A1817' : '#FFFFFF',
+                paddingBottom: Math.max(insets.bottom, 20) + 16,
+              },
+            ]}
+          >
             <View style={styles.modalHandle} />
 
             <View style={styles.modalHeader}>

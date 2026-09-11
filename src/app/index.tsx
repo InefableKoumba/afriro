@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Redirect } from 'expo-router';
 import { View, ActivityIndicator } from 'react-native';
 
-import { isCashier, isFleetManager, isPompiste, mobileAuth, MobileUserSession } from '@/services/auth';
+import { isAdmin, isCashier, isFleetManager, isPompiste, mobileAuth, MobileUserSession } from '@/services/auth';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
@@ -31,6 +31,10 @@ export default function RootIndexDispatcher() {
 
   const role = user?.role;
 
+  if (isAdmin(role)) {
+    return <Redirect href="/(admin)" />;
+  }
+
   if (isPompiste(role)) {
     return <Redirect href="/(pompiste)" />;
   }
@@ -46,3 +50,4 @@ export default function RootIndexDispatcher() {
   // Default fallback for forecourt attendants
   return <Redirect href="/(pompiste)" />;
 }
+

@@ -67,43 +67,14 @@ export default function CardsScreen() {
   const loadCards = async () => {
     try {
       const res = await fetch(API_ENDPOINTS.CARDS);
-      const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) {
-        setCards(data);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setCards(data);
+        }
       }
     } catch {
-      // Fallback demo cards
-      setCards([
-        {
-          cardUid: '04A1B2C3D4E5F6',
-          balanceFcfa: 100000,
-          offlineCounter: 12,
-          status: 'Active',
-          vehiclePlate: '542-CG-04',
-          assignedDriverName: 'Christian Okamba',
-          fuelTypeRestriction: 'Gazole',
-          dailySpendLimitFcfa: 50000,
-          weeklySpendLimitFcfa: 200000,
-        },
-        {
-          cardUid: '04B2C3D4E5F6A1',
-          balanceFcfa: 120000,
-          offlineCounter: 4,
-          status: 'Active',
-          vehiclePlate: '819-CG-04',
-          assignedDriverName: 'Jean Makaya',
-          fuelTypeRestriction: 'Gazole',
-          dailySpendLimitFcfa: 60000,
-          weeklySpendLimitFcfa: 250000,
-        },
-        {
-          cardUid: '04C3D4E5F6A1B2',
-          balanceFcfa: 0,
-          offlineCounter: 0,
-          status: 'InStock',
-          dailySpendLimitFcfa: 30000,
-        },
-      ]);
+      // Retain existing state if offline
     } finally {
       setLoading(false);
     }
@@ -685,7 +656,15 @@ export default function CardsScreen() {
       {/* ======================================================= */}
       <Modal visible={showProvisionModal} transparent animationType="slide">
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalSheet, { backgroundColor: theme.backgroundElement }]}>
+          <View
+            style={[
+              styles.modalSheet,
+              {
+                backgroundColor: theme.backgroundElement,
+                paddingBottom: Math.max(insets.bottom, 20) + 16,
+              },
+            ]}
+          >
             <View style={styles.sheetHandle} />
 
             <View style={styles.modalHeaderRow}>
@@ -765,7 +744,15 @@ export default function CardsScreen() {
       {/* ======================================================= */}
       <Modal visible={!!selectedCardForLimit} transparent animationType="slide">
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalSheet, { backgroundColor: theme.backgroundElement }]}>
+          <View
+            style={[
+              styles.modalSheet,
+              {
+                backgroundColor: theme.backgroundElement,
+                paddingBottom: Math.max(insets.bottom, 20) + 16,
+              },
+            ]}
+          >
             <View style={styles.sheetHandle} />
 
             <View style={styles.modalHeaderRow}>

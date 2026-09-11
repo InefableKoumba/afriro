@@ -38,7 +38,13 @@
     },
     "plugins": [
       "expo-router",
-      "react-native-nfc-manager",
+      [
+        "react-native-nfc-manager",
+        {
+          "nfcPermission": "Detect NFC tags",
+          "includeNdefEntitlement": false
+        }
+      ],
       [
         "expo-splash-screen",
         {

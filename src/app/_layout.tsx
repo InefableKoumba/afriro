@@ -57,6 +57,7 @@ export default function RootLayout() {
         ) : (
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="index" options={{ headerShown: false }} />
+            <Stack.Screen name="(admin)" options={{ headerShown: false }} />
             <Stack.Screen name="(pompiste)" options={{ headerShown: false }} />
             <Stack.Screen name="(cashier)" options={{ headerShown: false }} />
             <Stack.Screen name="(fleet)" options={{ headerShown: false }} />

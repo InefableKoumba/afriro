@@ -38,8 +38,8 @@ export default function PompisteProfileScreen() {
   useEffect(() => {
     const loadStats = async () => {
       try {
-        const attendantId = user?.userId || '55555555-5555-5555-5555-555555555555';
-        const stationId = user?.stationId || '11111111-1111-1111-1111-111111111111';
+        const attendantId = user?.userId;
+        const stationId = user?.stationId;
         const [m, p] = await Promise.all([
           localDb.getAttendantSalesMetrics(attendantId, stationId),
           localDb.getPendingCount(),
@@ -54,7 +54,7 @@ export default function PompisteProfileScreen() {
   const handleSync = async () => {
     setSyncing(true);
     try {
-      const res = await syncOfflineLedger();
+      const res = await syncOfflineLedger('POS-BZV-01', user?.stationId || undefined);
       if (res.acceptedCount > 0) {
         Alert.alert('Succès', `${res.acceptedCount} transaction(s) téléversée(s).`);
       } else {

@@ -118,8 +118,11 @@ export const Fonts = Platform.select({
 });
 
 export const Radius = {
+  xs: 4,
   sm: 8,
   chip: 12,
+  md: 16,
+  lg: 20,
   card: 24, // Generous modern rounded radius on cards
   modal: 28,
   pill: 9999,

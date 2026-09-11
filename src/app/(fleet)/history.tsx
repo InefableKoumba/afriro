@@ -128,53 +128,6 @@ export default function HistoryScreen() {
       }
     } catch {}
 
-    // 3. Realistic Demo Fallbacks if DB is fresh
-    if (combined.length === 0) {
-      combined.push(
-        {
-          id: 'TXN-DEMO-01',
-          type: 'Fuel',
-          title: 'Plein Gazole (20.00 L)',
-          subtitle: 'Pompe #03 · Carte •••• B2C3',
-          amountFcfa: 13000,
-          liters: 20,
-          fuelType: 'Gazole',
-          stationName: "Afric' Station Poto-Poto",
-          pumpNumber: '03',
-          timestamp: new Date().toISOString(),
-          isSynced: false,
-          signature: 'HMAC-SHA256-DEMO-01A2B3C4',
-          cardUid: '04A1B2C3D4E5F6',
-        },
-        {
-          id: 'TXN-DEMO-02',
-          type: 'Topup',
-          title: 'Rechargement Caisse Espèces',
-          subtitle: 'Reçu REC-2026-0812 · Guichetier #04',
-          amountFcfa: 50000,
-          stationName: "Afric' Station Poto-Poto",
-          timestamp: new Date(Date.now() - 3600000 * 5).toISOString(),
-          isSynced: true,
-          cardUid: '04A1B2C3D4E5F6',
-        },
-        {
-          id: 'TXN-DEMO-03',
-          type: 'Fuel',
-          title: 'Plein Super Essence (35.00 L)',
-          subtitle: 'Pompe #01 · Carte •••• 819C',
-          amountFcfa: 27125,
-          liters: 35,
-          fuelType: 'Super',
-          stationName: "Afric' Station Bacongo",
-          pumpNumber: '01',
-          timestamp: new Date(Date.now() - 86400000).toISOString(),
-          isSynced: true,
-          signature: 'HMAC-SHA256-DEMO-99887766',
-          cardUid: '04B2C3D4E5F6A1',
-        }
-      );
-    }
-
     // Sort descending by date
     combined.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     setItems(combined);
@@ -428,7 +381,15 @@ export default function HistoryScreen() {
       {/* ======================================================= */}
       <Modal visible={!!selectedItem} transparent animationType="slide">
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalSheet, { backgroundColor: theme.backgroundElement }]}>
+          <View
+            style={[
+              styles.modalSheet,
+              {
+                backgroundColor: theme.backgroundElement,
+                paddingBottom: Math.max(insets.bottom, 20) + 16,
+              },
+            ]}
+          >
             <View style={styles.sheetHandle} />
 
             <View style={styles.modalHeaderRow}>

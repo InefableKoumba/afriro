@@ -30,6 +30,12 @@ export function isFleetManager(role?: string): boolean {
   return r === "client" || r === "fleetmanager";
 }
 
+export function isAdmin(role?: string): boolean {
+  if (!role) return false;
+  const r = role.toLowerCase();
+  return r === "admin" || r === "directeur";
+}
+
 
 type AuthListener = (user: MobileUserSession | null) => void;
 type OnboardingListener = (hasSeen: boolean) => void;

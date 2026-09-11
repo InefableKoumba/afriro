@@ -36,41 +36,12 @@ interface CardItem {
   fuelTypeRestriction?: string;
   dailySpendLimitFcfa?: number;
   weeklySpendLimitFcfa?: number;
+  hasPin: boolean;
+  clientAttached: boolean;
+  companyName?: string;
+  clientType?: string;
+  clientPhone?: string;
 }
-
-const DEMO_CARDS: CardItem[] = [
-  {
-    cardUid: '04A1B2C3D4E5F6',
-    status: 'Active',
-    balanceFcfa: 100000,
-    offlineCounter: 14,
-    vehiclePlate: '542-CG-04',
-    assignedDriverName: 'Christian Okamba',
-    fuelTypeRestriction: 'Gazole',
-    dailySpendLimitFcfa: 50000,
-    weeklySpendLimitFcfa: 200000,
-  },
-  {
-    cardUid: '04B2C3D4E5F6A1',
-    status: 'Active',
-    balanceFcfa: 120000,
-    offlineCounter: 6,
-    vehiclePlate: '819-CG-04',
-    assignedDriverName: 'Jean Makaya',
-    fuelTypeRestriction: 'Super',
-    dailySpendLimitFcfa: 60000,
-    weeklySpendLimitFcfa: 250000,
-  },
-  {
-    cardUid: '04C3D4E5F6A1B2',
-    status: 'Suspended',
-    balanceFcfa: 35000,
-    offlineCounter: 10,
-    vehiclePlate: '104-CG-04',
-    assignedDriverName: 'Patrice Mabiala',
-    fuelTypeRestriction: 'Super',
-  },
-];
 
 const PRESET_AMOUNTS = [5000, 10000, 15000, 20000, 50000];
 
@@ -95,25 +66,49 @@ export default function PompistePaymentScreen() {
   // Pricing
   const pricePerLiter = fuelType === 'Super' ? 775 : 650;
 
-  // Processing & Receipt State
+  // Processing, PIN & Receipt State
   const [processing, setProcessing] = useState(false);
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [enteredPin, setEnteredPin] = useState('');
+  const [pinError, setPinError] = useState<string | null>(null);
   const [receiptSlip, setReceiptSlip] = useState<string | null>(null);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
+
+  const [stationInfo, setStationInfo] = useState<{ stationName: string; address: string } | null>(null);
 
   useEffect(() => {
     const unsub = mobileAuth.subscribe((u) => setUser(u));
     return () => unsub();
   }, []);
 
+  // Fetch station details
+  useEffect(() => {
+    if (user?.stationId) {
+      fetch(`${API_BASE_URL}/api/stations/${user.stationId}`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data) {
+            setStationInfo({
+              stationName: data.stationName || "Afric' Station",
+              address: data.address || data.city || 'Congo',
+            });
+          }
+        })
+        .catch(() => {});
+    }
+  }, [user?.stationId]);
+
   // Fetch or resolve card when cardUid is provided
   useEffect(() => {
-    const targetUid = params.cardUid || DEMO_CARDS[0].cardUid;
-    loadCardByUid(targetUid);
+    if (params.cardUid) {
+      loadCardByUid(params.cardUid);
+    }
   }, [params.cardUid]);
 
-  const loadCardByUid = async (uid: string) => {
+  const loadCardByUid = async (uid: string, ndefData?: any) => {
     const cleanUid = uid.trim().toUpperCase();
+    if (!cleanUid) return;
     setLoadingCard(true);
     try {
       const res = await fetch(`${API_BASE_URL}/api/cards/${cleanUid}`);
@@ -124,35 +119,85 @@ export default function PompistePaymentScreen() {
           status: data.status,
           balanceFcfa: Number(data.balanceFcfa) || 0,
           offlineCounter: Number(data.offlineCounter) || 0,
-          vehiclePlate: data.vehiclePlate,
-          assignedDriverName: data.assignedDriverName,
-          fuelTypeRestriction: data.fuelTypeRestriction,
-          dailySpendLimitFcfa: data.dailySpendLimitFcfa ? Number(data.dailySpendLimitFcfa) : undefined,
+          vehiclePlate: data.vehiclePlate || ndefData?.vehiclePlate,
+          assignedDriverName: data.assignedDriverName || ndefData?.userName || ndefData?.driverName,
+          fuelTypeRestriction: data.fuelTypeRestriction || ndefData?.fuelRestriction,
+          dailySpendLimitFcfa: data.dailySpendLimitFcfa
+            ? Number(data.dailySpendLimitFcfa)
+            : ndefData?.dailyLimitFcfa ?? undefined,
           weeklySpendLimitFcfa: data.weeklySpendLimitFcfa ? Number(data.weeklySpendLimitFcfa) : undefined,
+          hasPin: Boolean(data.hasPin),
+          clientAttached: Boolean(data.clientAttached || data.company || data.user || data.companyId),
+          companyName: data.company?.companyName || data.user?.fullName,
+          clientType: data.company?.clientType || (data.user ? 'Particulier' : undefined),
+          clientPhone: data.company?.contactPhone || data.user?.phoneNumber,
         };
         setSelectedCard(item);
         if (item.fuelTypeRestriction === 'Super' || item.fuelTypeRestriction === 'Gazole') {
           setFuelType(item.fuelTypeRestriction);
         }
-        setLoadingCard(false);
-        return;
+      } else if (ndefData && (ndefData.app === 'AFRIRO-PAY' || ndefData.userName)) {
+        // Fallback using data stored directly on the physical NFC chip
+        const item: CardItem = {
+          cardUid: cleanUid,
+          status: 'Active',
+          balanceFcfa: 0,
+          offlineCounter: 0,
+          vehiclePlate: ndefData.vehiclePlate,
+          assignedDriverName: ndefData.userName || ndefData.driverName,
+          fuelTypeRestriction: ndefData.fuelRestriction,
+          dailySpendLimitFcfa: ndefData.dailyLimitFcfa ?? undefined,
+          hasPin: true,
+          clientAttached: Boolean(ndefData.companyId || ndefData.companyName || ndefData.userName),
+          companyName: ndefData.companyName || ndefData.userName,
+          clientType: 'Entreprise',
+          clientPhone: ndefData.userPhone,
+        };
+        setSelectedCard(item);
+        if (item.fuelTypeRestriction === 'Super' || item.fuelTypeRestriction === 'Gazole') {
+          setFuelType(item.fuelTypeRestriction);
+        }
+      } else {
+        setSelectedCard(null);
+        Alert.alert('Carte Introuvable', `La carte ${cleanUid} n'a pas été trouvée dans le système.`);
       }
-    } catch {}
-
-    const fallback = DEMO_CARDS.find((c) => c.cardUid.toUpperCase() === cleanUid) || DEMO_CARDS[0];
-    setSelectedCard(fallback);
-    if (fallback.fuelTypeRestriction === 'Super' || fallback.fuelTypeRestriction === 'Gazole') {
-      setFuelType(fallback.fuelTypeRestriction);
+    } catch {
+      if (ndefData && (ndefData.app === 'AFRIRO-PAY' || ndefData.userName)) {
+        // Offline pump attendant payment using data directly on the card
+        const item: CardItem = {
+          cardUid: cleanUid,
+          status: 'Active',
+          balanceFcfa: 0,
+          offlineCounter: 0,
+          vehiclePlate: ndefData.vehiclePlate,
+          assignedDriverName: ndefData.userName || ndefData.driverName,
+          fuelTypeRestriction: ndefData.fuelRestriction,
+          dailySpendLimitFcfa: ndefData.dailyLimitFcfa ?? undefined,
+          hasPin: true,
+          clientAttached: Boolean(ndefData.companyId || ndefData.companyName || ndefData.userName),
+          companyName: ndefData.companyName || ndefData.userName,
+          clientType: 'Entreprise',
+          clientPhone: ndefData.userPhone,
+        };
+        setSelectedCard(item);
+        if (item.fuelTypeRestriction === 'Super' || item.fuelTypeRestriction === 'Gazole') {
+          setFuelType(item.fuelTypeRestriction);
+        }
+      } else {
+        setSelectedCard(null);
+        Alert.alert('Erreur', `Impossible de contacter le serveur pour vérifier la carte ${cleanUid}.`);
+      }
+    } finally {
+      setLoadingCard(false);
     }
-    setLoadingCard(false);
   };
 
   // Quick NFC Scan
   const handleQuickNfcTap = async () => {
     try {
-      const res = await nfcService.scanCardTag();
+      const res = await nfcService.readCardPayload();
       if (res.success && res.cardUid) {
-        await loadCardByUid(res.cardUid);
+        await loadCardByUid(res.cardUid, res.ndefData);
       } else {
         Alert.alert('NFC', res.error || 'Aucune carte détectée.');
       }
@@ -208,8 +253,8 @@ export default function PompistePaymentScreen() {
   const totalAmountFcfa = parseFloat(manualAmount) || 0;
   const totalLitersDispensed = parseFloat(liters) || 0;
 
-  // Execute Payment
-  const handleExecutePayment = async () => {
+  // Step 1: Pre-validation before triggering PIN modal
+  const handleInitiatePayment = () => {
     setPaymentError(null);
 
     if (!selectedCard) {
@@ -221,6 +266,20 @@ export default function PompistePaymentScreen() {
       const msg = `Paiement rejeté : La carte est ${selectedCard.status}.`;
       setPaymentError(msg);
       Alert.alert('Paiement Rejeté', msg);
+      return;
+    }
+
+    if (!selectedCard.clientAttached) {
+      const msg = "Paiement impossible : Cette carte n'est rattachée à aucun client.";
+      setPaymentError(msg);
+      Alert.alert('Client Requis', msg);
+      return;
+    }
+
+    if (!selectedCard.hasPin) {
+      const msg = "Paiement impossible : Cette carte ne possède aucun code PIN configuré. Le client doit d'abord configurer son code PIN depuis son tableau de bord.";
+      setPaymentError(msg);
+      Alert.alert('Code PIN Requis', msg);
       return;
     }
 
@@ -262,31 +321,76 @@ export default function PompistePaymentScreen() {
       return;
     }
 
+    // Open PIN Entry Modal
+    setEnteredPin('');
+    setPinError(null);
+    setShowPinModal(true);
+  };
+
+  // Step 2: Confirm Payment with 4-digit PIN
+  const handleConfirmPaymentWithPin = async (pinToSubmit?: string) => {
+    const pin = (pinToSubmit || enteredPin).trim();
+    if (pin.length !== 4) {
+      setPinError('Veuillez saisir les 4 chiffres du code PIN.');
+      return;
+    }
+
     setProcessing(true);
+    setPinError(null);
+
+    const deviceId = 'POS-BZV-01';
+    const stationId = user?.stationId || '11111111-1111-1111-1111-111111111111';
+    const attendantId = user?.userId;
 
     try {
-      const nextCounter = (selectedCard.offlineCounter || 0) + 1;
-      const deviceId = 'POS-BZV-01';
-      const stationId = user?.stationId || '11111111-1111-1111-1111-111111111111';
-      const attendantId = user?.userId || '55555555-5555-5555-5555-555555555555';
-      const keyDeriv = 'KEY-DERIV-' + selectedCard.cardUid;
+      // 1. Online transaction to server with PIN
+      const onlineRes = await fetch(`${API_BASE_URL}/api/transactions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cardUid: selectedCard!.cardUid,
+          deviceId,
+          stationId,
+          attendantId,
+          amountFcfa: totalAmountFcfa,
+          liters: totalLitersDispensed,
+          fuelType,
+          pinCode: pin,
+        }),
+      });
 
-      // 1. Digital signature
+      if (!onlineRes.ok) {
+        const errData = await onlineRes.json().catch(() => ({}));
+        const errorMsg = errData.error || errData.detail || 'Erreur lors du paiement';
+        if (errData.isFrozen && selectedCard) {
+          setSelectedCard({ ...selectedCard, status: 'Suspended' });
+        }
+        setPinError(errorMsg);
+        setEnteredPin('');
+        setProcessing(false);
+        return;
+      }
+
+      const serverTx = await onlineRes.json();
+
+      // Successful online payment!
+      setShowPinModal(false);
+      setEnteredPin('');
+
+      const nextCounter = (selectedCard!.offlineCounter || 0) + 1;
+      const keyDeriv = 'KEY-DERIV-' + selectedCard!.cardUid;
       const signature = await signOfflineTransaction(
-        selectedCard.cardUid,
+        selectedCard!.cardUid,
         deviceId,
         totalAmountFcfa,
         nextCounter,
         keyDeriv
       );
 
-      const txId = `TXN-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-      const timestamp = new Date().toISOString();
-
-      // 2. Queue into local DB
+      // Record in localDb as synced (isSynced: 1)
       await localDb.queueTransaction({
-        id: txId,
-        cardUid: selectedCard.cardUid,
+        id: serverTx.id || `TXN-${Date.now()}`,
+        cardUid: selectedCard!.cardUid,
         deviceId,
         stationId,
         attendantId,
@@ -295,47 +399,135 @@ export default function PompistePaymentScreen() {
         fuelType,
         offlineCounter: nextCounter,
         signature,
-        timestamp,
+        timestamp: serverTx.timestamp || new Date().toISOString(),
       });
 
-      // 3. Update local card balance
-      const newBalance = selectedCard.balanceFcfa - totalAmountFcfa;
+      // Update card balance in state
+      const newBalance = serverTx.remainingBalance ?? (selectedCard!.balanceFcfa - totalAmountFcfa);
       setSelectedCard({
-        ...selectedCard,
+        ...selectedCard!,
         balanceFcfa: newBalance,
         offlineCounter: nextCounter,
       });
 
-      // 4. Generate formatted thermal receipt
+      // Generate formatted thermal receipt
       const slip = thermalPrinter.formatReceipt({
-        stationName: "Afric' Station Poto-Poto",
-        stationAddress: 'Avenue de la Paix, Brazzaville',
+        stationName: stationInfo?.stationName || "Afric' Station Poto-Poto",
+        stationAddress: stationInfo?.address || 'Avenue de la Paix, Brazzaville',
         pumpNumber: '03',
         terminalId: deviceId,
         attendantName: user?.fullName || 'Jean-Paul Samba',
-        cardUid: selectedCard.cardUid,
-        vehiclePlate: selectedCard.vehiclePlate,
-        driverName: selectedCard.assignedDriverName,
+        cardUid: selectedCard!.cardUid,
+        vehiclePlate: selectedCard!.vehiclePlate,
+        driverName: selectedCard!.assignedDriverName || selectedCard!.companyName,
         fuelType,
         liters: totalLitersDispensed,
         pricePerLiter,
         amountFcfa: totalAmountFcfa,
         remainingBalanceFcfa: newBalance,
         signature,
-        timestamp,
+        timestamp: serverTx.timestamp || new Date().toISOString(),
       });
 
       setReceiptSlip(slip);
       setShowReceiptModal(true);
+    } catch (networkErr: any) {
+      // Offline fallback: if network error, queue locally and alert
+      try {
+        const nextCounter = (selectedCard!.offlineCounter || 0) + 1;
+        const keyDeriv = 'KEY-DERIV-' + selectedCard!.cardUid;
+        const signature = await signOfflineTransaction(
+          selectedCard!.cardUid,
+          deviceId,
+          totalAmountFcfa,
+          nextCounter,
+          keyDeriv
+        );
 
-      // 5. Fire background sync
-      syncOfflineLedger().catch(() => {});
-    } catch (err: any) {
-      Alert.alert('Erreur', err?.message || 'Échec du traitement du paiement');
+        const txId = `TXN-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+        const timestamp = new Date().toISOString();
+
+        await localDb.queueTransaction({
+          id: txId,
+          cardUid: selectedCard!.cardUid,
+          deviceId,
+          stationId,
+          attendantId,
+          amountFcfa: totalAmountFcfa,
+          liters: totalLitersDispensed,
+          fuelType,
+          offlineCounter: nextCounter,
+          signature,
+          timestamp,
+        });
+
+        const newBalance = selectedCard!.balanceFcfa - totalAmountFcfa;
+        setSelectedCard({
+          ...selectedCard!,
+          balanceFcfa: newBalance,
+          offlineCounter: nextCounter,
+        });
+
+        setShowPinModal(false);
+        setEnteredPin('');
+
+        const slip = thermalPrinter.formatReceipt({
+          stationName: stationInfo?.stationName || "Afric' Station Poto-Poto",
+          stationAddress: stationInfo?.address || 'Avenue de la Paix, Brazzaville',
+          pumpNumber: '03',
+          terminalId: deviceId,
+          attendantName: user?.fullName || 'Jean-Paul Samba',
+          cardUid: selectedCard!.cardUid,
+          vehiclePlate: selectedCard!.vehiclePlate,
+          driverName: selectedCard!.assignedDriverName || selectedCard!.companyName,
+          fuelType,
+          liters: totalLitersDispensed,
+          pricePerLiter,
+          amountFcfa: totalAmountFcfa,
+          remainingBalanceFcfa: newBalance,
+          signature,
+          timestamp,
+        });
+
+        setReceiptSlip(slip);
+        setShowReceiptModal(true);
+        syncOfflineLedger().catch(() => {});
+      } catch (e: any) {
+        Alert.alert('Erreur', e?.message || 'Échec du traitement du paiement');
+      }
     } finally {
       setProcessing(false);
     }
   };
+
+  const handleKeypadPress = (digit: string) => {
+    if (processing) return;
+    setPinError(null);
+    if (enteredPin.length < 4) {
+      const next = enteredPin + digit;
+      setEnteredPin(next);
+      if (next.length === 4) {
+        handleConfirmPaymentWithPin(next);
+      }
+    }
+  };
+
+  const handleKeypadBackspace = () => {
+    if (processing) return;
+    setPinError(null);
+    setEnteredPin((prev) => prev.slice(0, -1));
+  };
+
+  const handleKeypadClear = () => {
+    if (processing) return;
+    setPinError(null);
+    setEnteredPin('');
+  };
+
+  const isCardUsable =
+    selectedCard?.status === 'Active' &&
+    Boolean(selectedCard?.clientAttached) &&
+    Boolean(selectedCard?.hasPin);
 
   return (
     <KeyboardAvoidingView
@@ -369,7 +561,11 @@ export default function PompistePaymentScreen() {
                 {selectedCard?.cardUid || 'Recherche carte...'}
               </ThemedText>
               <ThemedText style={[styles.cardSubText, { color: theme.textMuted }]}>
-                {selectedCard?.vehiclePlate ? `Véhicule: ${selectedCard.vehiclePlate}` : 'Carte Carburant Standard'}
+                {selectedCard?.companyName
+                  ? `${selectedCard.companyName} (${selectedCard.clientType || 'Client'})`
+                  : selectedCard?.vehiclePlate
+                  ? `Véhicule: ${selectedCard.vehiclePlate}`
+                  : 'Carte Carburant Standard'}
                 {selectedCard?.assignedDriverName ? ` · ${selectedCard.assignedDriverName}` : ''}
               </ThemedText>
             </View>
@@ -385,12 +581,12 @@ export default function PompistePaymentScreen() {
             </Pressable>
           </View>
 
-          {/* Balance & Limits row */}
+          {/* Balance & Security Status Row */}
           {selectedCard && (
             <View style={styles.cardBalanceRow}>
               <View>
                 <ThemedText style={[styles.balanceLabel, { color: theme.textMuted }]}>
-                  Solde Carte Disponible :
+                  Solde Disponible :
                 </ThemedText>
                 <ThemedText
                   style={[
@@ -402,41 +598,62 @@ export default function PompistePaymentScreen() {
                 </ThemedText>
               </View>
 
-              {selectedCard.status !== 'Active' && (
-                <View style={[styles.suspendedBadge, { backgroundColor: 'rgba(239, 68, 68, 0.15)' }]}>
-                  <ThemedText style={[styles.suspendedText, { color: theme.statusError }]}>
-                    {selectedCard.status.toUpperCase()}
+              <View style={styles.cardBadgesGroup}>
+                <View
+                  style={[
+                    styles.statusBadge,
+                    {
+                      backgroundColor:
+                        selectedCard.hasPin
+                          ? 'rgba(34, 197, 94, 0.15)'
+                          : 'rgba(245, 158, 11, 0.15)',
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name={selectedCard.hasPin ? 'shield-checkmark' : 'alert-circle'}
+                    size={12}
+                    color={selectedCard.hasPin ? theme.statusSuccess : theme.statusWarning}
+                  />
+                  <ThemedText
+                    style={[
+                      styles.statusBadgeText,
+                      { color: selectedCard.hasPin ? theme.statusSuccess : theme.statusWarning },
+                    ]}
+                  >
+                    {selectedCard.hasPin ? 'PIN ACTIF' : 'SANS PIN'}
                   </ThemedText>
                 </View>
-              )}
+
+                {selectedCard.status !== 'Active' && (
+                  <View style={[styles.statusBadge, { backgroundColor: 'rgba(239, 68, 68, 0.15)' }]}>
+                    <ThemedText style={[styles.statusBadgeText, { color: theme.statusError }]}>
+                      {selectedCard.status.toUpperCase()}
+                    </ThemedText>
+                  </View>
+                )}
+              </View>
             </View>
           )}
-        </View>
 
-        {/* Quick select demo card chips */}
-        <View style={styles.demoChipsRow}>
-          {DEMO_CARDS.map((c) => (
-            <Pressable
-              key={c.cardUid}
-              onPress={() => setSelectedCard(c)}
-              style={[
-                styles.demoChip,
-                {
-                  backgroundColor:
-                    selectedCard?.cardUid === c.cardUid
-                      ? theme.accentTranslucent
-                      : dark
-                      ? '#201E1C'
-                      : '#EFECE7',
-                  borderColor: selectedCard?.cardUid === c.cardUid ? theme.accentPrimary : 'transparent',
-                },
-              ]}
-            >
-              <ThemedText style={[styles.demoChipText, { color: theme.text }]}>
-                •••• {c.cardUid.slice(-4)} ({c.status})
+          {/* Blocking alerts inside card summary */}
+          {selectedCard && !selectedCard.clientAttached && (
+            <View style={[styles.inlineAlert, { backgroundColor: 'rgba(239, 68, 68, 0.12)' }]}>
+              <Ionicons name="alert-circle" size={16} color={theme.statusError} />
+              <ThemedText style={[styles.inlineAlertText, { color: theme.statusError }]}>
+                Carte non rattachée à un client : paiement impossible.
               </ThemedText>
-            </Pressable>
-          ))}
+            </View>
+          )}
+
+          {selectedCard && selectedCard.clientAttached && !selectedCard.hasPin && (
+            <View style={[styles.inlineAlert, { backgroundColor: 'rgba(245, 158, 11, 0.12)' }]}>
+              <Ionicons name="lock-closed" size={16} color={theme.statusWarning} />
+              <ThemedText style={[styles.inlineAlertText, { color: theme.statusWarning }]}>
+                Code PIN non configuré : le client doit définir son code PIN sur son dashboard.
+              </ThemedText>
+            </View>
+          )}
         </View>
 
         {/* ======================================================= */}
@@ -515,70 +732,74 @@ export default function PompistePaymentScreen() {
         </View>
 
         {/* ======================================================= */}
-        {/* VOLUME & AMOUNT CONVERTER INPUTS                        */}
+        {/* QUANTITY & AMOUNT CALCULATION                           */}
         {/* ======================================================= */}
         <ThemedText style={[styles.sectionTitle, { color: theme.text, marginTop: Spacing.md }]}>
-          2. Volume & Montant
+          2. Volume (L) ou Montant (FCFA)
         </ThemedText>
 
-        <View style={styles.inputsGrid}>
-          {/* Liters Input */}
-          <View style={[styles.inputBox, { backgroundColor: dark ? '#161514' : theme.backgroundElement }]}>
-            <ThemedText style={[styles.inputLabel, { color: theme.textMuted }]}>Volume (Litres)</ThemedText>
-            <View style={styles.inputInnerRow}>
+        <View style={styles.calcRow}>
+          <View style={[styles.calcBox, { backgroundColor: dark ? '#161514' : theme.backgroundElement }]}>
+            <ThemedText style={[styles.calcBoxLabel, { color: theme.textMuted }]}>
+              Volume Servi (Litres)
+            </ThemedText>
+            <View style={styles.calcInputWrap}>
               <TextInput
-                style={[styles.numericInput, { color: theme.text }]}
-                keyboardType="numeric"
+                style={[styles.calcInput, { color: theme.text }]}
+                keyboardType="decimal-pad"
                 value={liters}
                 onChangeText={handleLitersChange}
                 selectTextOnFocus
               />
-              <ThemedText style={[styles.unitSuffix, { color: theme.accentPrimary }]}>L</ThemedText>
+              <ThemedText style={[styles.calcInputUnit, { color: theme.textMuted }]}>L</ThemedText>
             </View>
           </View>
 
-          {/* Amount FCFA Input */}
-          <View style={[styles.inputBox, { backgroundColor: dark ? '#161514' : theme.backgroundElement }]}>
-            <ThemedText style={[styles.inputLabel, { color: theme.textMuted }]}>Montant (FCFA)</ThemedText>
-            <View style={styles.inputInnerRow}>
+          <View style={[styles.calcBox, { backgroundColor: dark ? '#161514' : theme.backgroundElement }]}>
+            <ThemedText style={[styles.calcBoxLabel, { color: theme.textMuted }]}>
+              Montant Total (FCFA)
+            </ThemedText>
+            <View style={styles.calcInputWrap}>
               <TextInput
-                style={[styles.numericInput, { color: theme.text }]}
-                keyboardType="numeric"
+                style={[styles.calcInput, { color: theme.accentPrimary, fontWeight: '800' }]}
+                keyboardType="number-pad"
                 value={manualAmount}
                 onChangeText={handleAmountChange}
                 selectTextOnFocus
               />
-              <ThemedText style={[styles.unitSuffix, { color: theme.accentPrimary }]}>FCFA</ThemedText>
+              <ThemedText style={[styles.calcInputUnit, { color: theme.textMuted }]}>FCFA</ThemedText>
             </View>
           </View>
         </View>
 
-        {/* Quick Amount Presets */}
-        <View style={styles.presetsRow}>
-          {PRESET_AMOUNTS.map((amt) => (
+        {/* Presets */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.presetScroll}>
+          {PRESET_AMOUNTS.map((fcfa) => (
             <Pressable
-              key={amt}
-              onPress={() => handleSelectPreset(amt)}
+              key={fcfa}
               style={[
                 styles.presetChip,
                 {
-                  backgroundColor:
-                    totalAmountFcfa === amt ? theme.accentTranslucent : dark ? '#1C1A18' : '#F0EBE4',
-                  borderColor: totalAmountFcfa === amt ? theme.accentPrimary : 'transparent',
+                  backgroundColor: dark ? '#22201E' : '#EBE5DE',
+                  borderColor: manualAmount === fcfa.toString() ? theme.accentPrimary : 'transparent',
                 },
               ]}
+              onPress={() => handleSelectPreset(fcfa)}
             >
               <ThemedText
                 style={[
                   styles.presetChipText,
-                  { color: totalAmountFcfa === amt ? theme.accentPrimary : theme.textSecondary },
+                  {
+                    color: manualAmount === fcfa.toString() ? theme.accentPrimary : theme.text,
+                    fontWeight: manualAmount === fcfa.toString() ? '700' : '500',
+                  },
                 ]}
               >
-                {amt >= 1000 ? `${amt / 1000}k` : amt}
+                {fcfa.toLocaleString('fr-FR')} F
               </ThemedText>
             </Pressable>
           ))}
-        </View>
+        </ScrollView>
 
         {/* Error Alert Box */}
         {paymentError && (
@@ -590,39 +811,266 @@ export default function PompistePaymentScreen() {
           </View>
         )}
 
-        {/* ======================================================= */}
-        {/* EXECUTE PAYMENT ACTION BUTTON                           */}
-        {/* ======================================================= */}
+        {/* Pay Action Button */}
         <Pressable
           style={({ pressed }) => [
             styles.payBtn,
             {
-              backgroundColor: theme.accentPrimary,
-              opacity: processing || selectedCard?.status !== 'Active' ? 0.6 : pressed ? 0.9 : 1,
+              backgroundColor: isCardUsable ? theme.accentPrimary : dark ? '#2A2725' : '#D1CBC4',
+              opacity: !isCardUsable ? 0.6 : pressed ? 0.9 : 1,
             },
           ]}
-          onPress={handleExecutePayment}
-          disabled={processing || selectedCard?.status !== 'Active'}
+          onPress={handleInitiatePayment}
+          disabled={!isCardUsable}
         >
-          {processing ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
-          ) : (
-            <>
-              <Ionicons name="checkmark-circle" size={22} color="#FFFFFF" />
-              <ThemedText style={styles.payBtnText}>
-                Valider & Débiter {totalAmountFcfa.toLocaleString('fr-FR')} FCFA
-              </ThemedText>
-            </>
-          )}
+          <Ionicons name="lock-closed" size={20} color={isCardUsable ? '#FFFFFF' : theme.textMuted} />
+          <ThemedText
+            style={[
+              styles.payBtnText,
+              { color: isCardUsable ? '#FFFFFF' : theme.textMuted },
+            ]}
+          >
+            {isCardUsable
+              ? `Valider & Saisir Code PIN (${totalAmountFcfa.toLocaleString('fr-FR')} FCFA)`
+              : !selectedCard?.clientAttached
+              ? 'Carte non rattachée à un client'
+              : !selectedCard?.hasPin
+              ? 'Code PIN non configuré'
+              : 'Carte Invalide'}
+          </ThemedText>
         </Pressable>
       </ScrollView>
+
+      {/* ======================================================= */}
+      {/* 4-DIGIT PIN ENTRY MODAL (SECURE FORECOURT AUTH)          */}
+      {/* ======================================================= */}
+      <Modal visible={showPinModal} transparent animationType="slide">
+        <View style={styles.modalBackdrop}>
+          <View
+            style={[
+              styles.pinSheet,
+              {
+                backgroundColor: dark ? '#1A1817' : '#FFFFFF',
+                paddingBottom: Math.max(insets.bottom, 16) + 16,
+              },
+            ]}
+          >
+            <View style={styles.modalHandle} />
+
+            <View style={styles.pinHeader}>
+              <View style={[styles.pinIconCircle, { backgroundColor: theme.accentPrimary + '1A' }]}>
+                <Ionicons name="shield-checkmark" size={28} color={theme.accentPrimary} />
+              </View>
+              <ThemedText style={[styles.pinTitle, { color: theme.text }]}>
+                Code PIN Client
+              </ThemedText>
+              <ThemedText style={[styles.pinAmountSubtitle, { color: theme.accentPrimary }]}>
+                {totalAmountFcfa.toLocaleString('fr-FR')} FCFA · {totalLitersDispensed} L {fuelType}
+              </ThemedText>
+              <ThemedText style={[styles.pinInstruction, { color: theme.textMuted }]}>
+                Demandez au client de composer son code secret à 4 chiffres sur ce terminal.
+              </ThemedText>
+            </View>
+
+            {/* PIN Dots (Masked) */}
+            <View style={styles.pinDotsRow}>
+              {[0, 1, 2, 3].map((index) => {
+                const isFilled = enteredPin.length > index;
+                const isCurrent = enteredPin.length === index;
+                return (
+                  <View
+                    key={index}
+                    style={[
+                      styles.pinDot,
+                      {
+                        borderColor: isCurrent ? theme.accentPrimary : dark ? '#444' : '#CCC',
+                        backgroundColor: isFilled
+                          ? theme.accentPrimary
+                          : dark
+                          ? '#22201E'
+                          : '#F5F0EB',
+                      },
+                    ]}
+                  >
+                    {isFilled && <View style={styles.pinDotInner} />}
+                  </View>
+                );
+              })}
+            </View>
+
+            {/* PIN Error Message */}
+            {pinError && (
+              <View style={[styles.pinErrorBox, { backgroundColor: 'rgba(239, 68, 68, 0.12)' }]}>
+                <Ionicons name="alert-circle" size={16} color={theme.statusError} />
+                <ThemedText style={[styles.pinErrorText, { color: theme.statusError }]}>
+                  {pinError}
+                </ThemedText>
+              </View>
+            )}
+
+            {/* Virtual Numeric Keypad */}
+            <View style={styles.keypadContainer}>
+              <View style={styles.keypadRow}>
+                {['1', '2', '3'].map((digit) => (
+                  <Pressable
+                    key={digit}
+                    style={({ pressed }) => [
+                      styles.keypadBtn,
+                      {
+                        backgroundColor: pressed
+                          ? theme.accentTranslucent
+                          : dark
+                          ? '#252321'
+                          : '#F3EFEA',
+                      },
+                    ]}
+                    onPress={() => handleKeypadPress(digit)}
+                    disabled={processing}
+                  >
+                    <ThemedText style={[styles.keypadDigit, { color: theme.text }]}>
+                      {digit}
+                    </ThemedText>
+                  </Pressable>
+                ))}
+              </View>
+
+              <View style={styles.keypadRow}>
+                {['4', '5', '6'].map((digit) => (
+                  <Pressable
+                    key={digit}
+                    style={({ pressed }) => [
+                      styles.keypadBtn,
+                      {
+                        backgroundColor: pressed
+                          ? theme.accentTranslucent
+                          : dark
+                          ? '#252321'
+                          : '#F3EFEA',
+                      },
+                    ]}
+                    onPress={() => handleKeypadPress(digit)}
+                    disabled={processing}
+                  >
+                    <ThemedText style={[styles.keypadDigit, { color: theme.text }]}>
+                      {digit}
+                    </ThemedText>
+                  </Pressable>
+                ))}
+              </View>
+
+              <View style={styles.keypadRow}>
+                {['7', '8', '9'].map((digit) => (
+                  <Pressable
+                    key={digit}
+                    style={({ pressed }) => [
+                      styles.keypadBtn,
+                      {
+                        backgroundColor: pressed
+                          ? theme.accentTranslucent
+                          : dark
+                          ? '#252321'
+                          : '#F3EFEA',
+                      },
+                    ]}
+                    onPress={() => handleKeypadPress(digit)}
+                    disabled={processing}
+                  >
+                    <ThemedText style={[styles.keypadDigit, { color: theme.text }]}>
+                      {digit}
+                    </ThemedText>
+                  </Pressable>
+                ))}
+              </View>
+
+              <View style={styles.keypadRow}>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.keypadBtn,
+                    styles.keypadActionBtn,
+                    {
+                      backgroundColor: pressed ? 'rgba(239, 68, 68, 0.15)' : 'transparent',
+                    },
+                  ]}
+                  onPress={() => {
+                    setShowPinModal(false);
+                    setEnteredPin('');
+                    setPinError(null);
+                  }}
+                  disabled={processing}
+                >
+                  <ThemedText style={[styles.keypadCancelText, { color: theme.statusError }]}>
+                    Annuler
+                  </ThemedText>
+                </Pressable>
+
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.keypadBtn,
+                    {
+                      backgroundColor: pressed
+                        ? theme.accentTranslucent
+                        : dark
+                        ? '#252321'
+                        : '#F3EFEA',
+                    },
+                  ]}
+                  onPress={() => handleKeypadPress('0')}
+                  disabled={processing}
+                >
+                  <ThemedText style={[styles.keypadDigit, { color: theme.text }]}>0</ThemedText>
+                </Pressable>
+
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.keypadBtn,
+                    styles.keypadActionBtn,
+                    {
+                      backgroundColor: pressed ? theme.accentTranslucent : 'transparent',
+                    },
+                  ]}
+                  onPress={handleKeypadBackspace}
+                  disabled={processing}
+                >
+                  <Ionicons name="backspace-outline" size={24} color={theme.text} />
+                </Pressable>
+              </View>
+            </View>
+
+            {/* Manual confirm button if already entered 4 digits */}
+            {enteredPin.length === 4 && (
+              <Pressable
+                style={[styles.pinConfirmBtn, { backgroundColor: theme.accentPrimary }]}
+                onPress={() => handleConfirmPaymentWithPin()}
+                disabled={processing}
+              >
+                {processing ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <>
+                    <Ionicons name="checkmark-circle" size={20} color="#FFFFFF" />
+                    <ThemedText style={styles.pinConfirmBtnText}>Valider le Paiement</ThemedText>
+                  </>
+                )}
+              </Pressable>
+            )}
+          </View>
+        </View>
+      </Modal>
 
       {/* ======================================================= */}
       {/* THERMAL RECEIPT SLIP MODAL                              */}
       {/* ======================================================= */}
       <Modal visible={showReceiptModal} transparent animationType="slide">
         <View style={styles.modalBackdrop}>
-          <View style={[styles.modalSheet, { backgroundColor: dark ? '#1A1817' : '#FFFFFF' }]}>
+          <View
+            style={[
+              styles.modalSheet,
+              {
+                backgroundColor: dark ? '#1A1817' : '#FFFFFF',
+                paddingBottom: Math.max(insets.bottom, 20) + 16,
+              },
+            ]}
+          >
             <View style={styles.modalHandle} />
 
             <View style={styles.successHeader}>
@@ -631,7 +1079,7 @@ export default function PompistePaymentScreen() {
                 Paiement Validé avec Succès !
               </ThemedText>
               <ThemedText style={[styles.successSub, { color: theme.textMuted }]}>
-                La transaction a été signée cryptographiquement et débitée de la carte NFC.
+                Code PIN validé. La transaction a été enregistrée et débitée de la carte client.
               </ThemedText>
             </View>
 
@@ -710,27 +1158,29 @@ const styles = StyleSheet.create({
   cardIconWrap: {
     width: 44,
     height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(192, 106, 50, 0.1)',
+    borderRadius: Radius.chip,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: Spacing.sm,
+    backgroundColor: 'rgba(192, 106, 50, 0.1)',
   },
   cardMeta: {
     flex: 1,
   },
   cardUidText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
+    letterSpacing: 0.5,
   },
   cardSubText: {
     fontSize: 12,
+    marginTop: 2,
   },
   changeCardBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: Radius.pill,
   },
@@ -741,114 +1191,117 @@ const styles = StyleSheet.create({
   cardBalanceRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(150, 150, 150, 0.1)',
-    paddingTop: Spacing.sm,
+    alignItems: 'center',
+    paddingTop: Spacing.xs,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(150, 150, 150, 0.2)',
   },
   balanceLabel: {
     fontSize: 11,
-    fontWeight: '500',
     marginBottom: 2,
   },
   balanceValue: {
     fontSize: 18,
     fontWeight: '800',
   },
-  suspendedBadge: {
+  cardBadgesGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: Radius.chip,
+    borderRadius: Radius.xs,
   },
-  suspendedText: {
-    fontSize: 11,
-    fontWeight: '800',
+  statusBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
   },
-  demoChipsRow: {
+  inlineAlert: {
     flexDirection: 'row',
-    gap: 6,
-    marginBottom: Spacing.md,
+    alignItems: 'center',
+    gap: 8,
+    padding: 10,
+    borderRadius: Radius.xs,
+    marginTop: 8,
   },
-  demoChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: Radius.pill,
-    borderWidth: 1,
-  },
-  demoChipText: {
+  inlineAlertText: {
     fontSize: 11,
     fontWeight: '600',
+    flex: 1,
   },
   sectionTitle: {
     fontSize: 14,
     fontWeight: '700',
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.xs,
   },
   fuelToggleRow: {
     flexDirection: 'row',
     gap: Spacing.sm,
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.sm,
   },
   fuelOption: {
     flex: 1,
-    padding: Spacing.md,
+    paddingVertical: 14,
+    paddingHorizontal: Spacing.md,
     borderRadius: Radius.card,
-    alignItems: 'center',
     borderWidth: 1.5,
+    alignItems: 'center',
     gap: 4,
   },
   fuelOptionTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
   },
   fuelOptionPrice: {
-    fontSize: 11,
-    fontWeight: '600',
+    fontSize: 12,
   },
-  inputsGrid: {
+  calcRow: {
     flexDirection: 'row',
     gap: Spacing.sm,
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.xs,
   },
-  inputBox: {
+  calcBox: {
     flex: 1,
-    padding: Spacing.md,
     borderRadius: Radius.card,
+    padding: Spacing.md,
   },
-  inputLabel: {
+  calcBoxLabel: {
     fontSize: 11,
-    fontWeight: '600',
     marginBottom: 4,
   },
-  inputInnerRow: {
+  calcInputWrap: {
     flexDirection: 'row',
     alignItems: 'baseline',
     gap: 4,
   },
-  numericInput: {
-    flex: 1,
-    fontSize: 24,
-    fontWeight: '800',
-    padding: 0,
-  },
-  unitSuffix: {
-    fontSize: 14,
+  calcInput: {
+    fontSize: 22,
     fontWeight: '700',
+    padding: 0,
+    minWidth: 50,
   },
-  presetsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  calcInputUnit: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  presetScroll: {
     marginBottom: Spacing.md,
+    paddingVertical: 4,
   },
   presetChip: {
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: Radius.pill,
     borderWidth: 1,
+    marginRight: 8,
   },
   presetChipText: {
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: 13,
   },
   errorCard: {
     flexDirection: 'row',
@@ -879,13 +1332,120 @@ const styles = StyleSheet.create({
   },
   payBtnText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
   },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.8)',
+    backgroundColor: 'rgba(0,0,0,0.75)',
     justifyContent: 'flex-end',
+  },
+  pinSheet: {
+    borderTopLeftRadius: Radius.modal,
+    borderTopRightRadius: Radius.modal,
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.md,
+  },
+  pinHeader: {
+    alignItems: 'center',
+    marginBottom: Spacing.md,
+  },
+  pinIconCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  pinTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  pinAmountSubtitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginTop: 2,
+  },
+  pinInstruction: {
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 6,
+    paddingHorizontal: Spacing.md,
+  },
+  pinDotsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 16,
+    marginVertical: Spacing.md,
+  },
+  pinDot: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pinDotInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#FFFFFF',
+  },
+  pinErrorBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    padding: 10,
+    borderRadius: Radius.xs,
+    marginBottom: Spacing.sm,
+  },
+  pinErrorText: {
+    fontSize: 12,
+    fontWeight: '600',
+    flex: 1,
+  },
+  keypadContainer: {
+    gap: 10,
+    marginVertical: Spacing.xs,
+  },
+  keypadRow: {
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'center',
+  },
+  keypadBtn: {
+    flex: 1,
+    height: 56,
+    borderRadius: Radius.chip,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  keypadActionBtn: {
+    backgroundColor: 'transparent',
+  },
+  keypadDigit: {
+    fontSize: 22,
+    fontWeight: '700',
+  },
+  keypadCancelText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  pinConfirmBtn: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: Radius.chip,
+    marginTop: Spacing.md,
+  },
+  pinConfirmBtnText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
   },
   modalSheet: {
     borderTopLeftRadius: Radius.modal,
