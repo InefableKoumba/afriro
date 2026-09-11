@@ -11,42 +11,25 @@ export interface MobileUserSession {
   token: string;
 }
 
-export interface DemoProfileItem {
-  role: string;
-  roleLabel: string;
-  sublabel: string;
-  phone: string;
-  description: string;
-  icon: string;
+
+export function isPompiste(role?: string): boolean {
+  if (!role) return false;
+  const r = role.toLowerCase();
+  return r === "pumpattendant" || r === "pompiste";
 }
 
-export const DEMO_PROFILES: DemoProfileItem[] = [
-  {
-    role: "PumpAttendant",
-    roleLabel: "Pompiste",
-    sublabel: "Jean-Paul Samba · Station Poto-Poto",
-    phone: "+242060000003",
-    description: "Terminal SoftPOS, saisie carburant & réconciliation de quart",
-    icon: "speedometer-outline",
-  },
-  {
-    role: "StationCashier",
-    roleLabel: "Caissière de Station",
-    sublabel: "Marlène Moundele · Guichet Poto-Poto",
-    phone: "+242060000002",
-    description: "Caisse station, recharge physique en espèces & stock cartes",
-    icon: "cash-outline",
-  },
-  {
-    role: "FleetManager",
-    roleLabel: "Gestionnaire Flotte B2B",
-    sublabel: "Aimé Makosso · Logistique Express Congo",
-    phone: "+242060000004",
-    description:
-      "Supervision flotte LEC, plafonds véhicules & blocage à distance",
-    icon: "business-outline",
-  },
-];
+export function isCashier(role?: string): boolean {
+  if (!role) return false;
+  const r = role.toLowerCase();
+  return r === "stationcashier" || r === "cashier" || r === "caissiere";
+}
+
+export function isFleetManager(role?: string): boolean {
+  if (!role) return false;
+  const r = role.toLowerCase();
+  return r === "client" || r === "fleetmanager";
+}
+
 
 type AuthListener = (user: MobileUserSession | null) => void;
 type OnboardingListener = (hasSeen: boolean) => void;
@@ -165,17 +148,6 @@ class MobileAuthService {
     }
   }
 
-  async quickLoginAsRole(
-    role: string,
-  ): Promise<{ success: boolean; error?: string }> {
-    const profile = DEMO_PROFILES.find(
-      (p) => p.role.toLowerCase() === role.toLowerCase(),
-    );
-    if (!profile) {
-      return { success: false, error: `Profil '${role}' introuvable` };
-    }
-    return this.login(profile.phone, "Afriro2026!");
-  }
 
   logout() {
     this.currentUser = null;

@@ -768,7 +768,7 @@ export default function WalletDashboardScreen() {
               Activité Récente
             </ThemedText>
             <Pressable
-              onPress={() => router.push('/(tabs)/history')}
+              onPress={() => router.push('/(fleet)/history')}
               hitSlop={8}
               style={{ flexDirection: 'row', alignItems: 'center' }}
             >

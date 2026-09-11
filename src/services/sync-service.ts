@@ -8,7 +8,10 @@ export interface SyncResult {
   message: string;
 }
 
-export async function syncOfflineLedger(deviceId: string, stationId: string): Promise<SyncResult> {
+export async function syncOfflineLedger(
+  deviceId: string = 'POS-BZV-01',
+  stationId: string = '11111111-1111-1111-1111-111111111111'
+): Promise<SyncResult> {
   try {
     const pending = await localDb.getPendingTransactions();
     if (pending.length === 0) {

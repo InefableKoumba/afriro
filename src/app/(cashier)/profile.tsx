@@ -14,7 +14,8 @@ import { ThemedText } from '@/components/themed-text';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { API_BASE_URL } from '@/constants/api';
-import { DEMO_PROFILES, DemoProfileItem, mobileAuth, MobileUserSession } from '@/services/auth';
+import { useRouter } from 'expo-router';
+import { mobileAuth, MobileUserSession } from '@/services/auth';
 
 export default function ProfileScreen() {
   const scheme = useColorScheme();
@@ -23,7 +24,6 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
 
   const [user, setUser] = useState<MobileUserSession | null>(mobileAuth.getUser());
-  const [switchingRole, setSwitchingRole] = useState<string | null>(null);
   const [biometricsEnabled, setBiometricsEnabled] = useState(true);
 
   useEffect(() => {
@@ -40,16 +40,6 @@ export default function ProfileScreen() {
         { text: 'Se Déconnecter', style: 'destructive', onPress: () => mobileAuth.logout() },
       ]
     );
-  };
-
-  const handleSwitchProfile = async (profile: DemoProfileItem) => {
-    if (user?.role === profile.role) return;
-    setSwitchingRole(profile.role);
-    const res = await mobileAuth.quickLoginAsRole(profile.role);
-    setSwitchingRole(null);
-    if (!res.success) {
-      Alert.alert('Erreur', res.error || 'Échec du changement de profil');
-    }
   };
 
   const handleReplayOnboarding = () => {
@@ -223,78 +213,6 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* ======================================================= */}
-        {/* FAST PERSONA / ROLE SWITCHER                           */}
-        {/* ======================================================= */}
-        <View style={styles.sectionBlock}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <ThemedText style={styles.sectionTitle}>Simulateur de Profils Métier</ThemedText>
-            {switchingRole && <ActivityIndicator size="small" color={theme.accentPrimary} />}
-          </View>
-          <ThemedText type="caption" style={{ color: theme.textMuted, fontSize: 11, marginBottom: 12 }}>
-            Changez instantanément d'opérateur pour visualiser l'interface adaptée.
-          </ThemedText>
-
-          <View style={styles.personaGrid}>
-            {DEMO_PROFILES.map((prof) => {
-              const isCurrent = user?.role === prof.role;
-              return (
-                <Pressable
-                  key={prof.role}
-                  onPress={() => handleSwitchProfile(prof)}
-                  disabled={!!switchingRole || isCurrent}
-                  style={({ pressed }) => [
-                    styles.personaCard,
-                    {
-                      backgroundColor: isCurrent ? 'rgba(216,128,74,0.18)' : theme.backgroundElement,
-                      opacity: isCurrent ? 1 : pressed ? 0.85 : 0.95,
-                    },
-                  ]}
-                >
-                  <View style={styles.personaLeft}>
-                    <View
-                      style={[
-                        styles.personaIconBox,
-                        {
-                          backgroundColor: isCurrent ? theme.accentPrimary : 'rgba(255,255,255,0.08)',
-                        },
-                      ]}
-                    >
-                      <Ionicons
-                        name={prof.icon as any}
-                        size={18}
-                        color={isCurrent ? '#FFFFFF' : theme.textMuted}
-                      />
-                    </View>
-                    <View style={{ marginLeft: 12, flex: 1 }}>
-                      <ThemedText
-                        style={{
-                          color: isCurrent ? theme.accentPrimary : theme.text,
-                          fontSize: 14,
-                          fontWeight: isCurrent ? '700' : '600',
-                        }}
-                      >
-                        {prof.roleLabel}
-                      </ThemedText>
-                      <ThemedText type="caption" style={{ color: theme.textMuted, fontSize: 11 }}>
-                        {prof.sublabel}
-                      </ThemedText>
-                    </View>
-                  </View>
-
-                  {isCurrent ? (
-                    <View style={styles.currentPill}>
-                      <Ionicons name="checkmark-circle" size={14} color={theme.accentPrimary} />
-                      <ThemedText style={styles.currentPillText}>Actif</ThemedText>
-                    </View>
-                  ) : (
-                    <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
-                  )}
-                </Pressable>
-              );
-            })}
-          </View>
-        </View>
 
         {/* ======================================================= */}
         {/* ONBOARDING & GUIDES                                    */}

@@ -15,6 +15,17 @@ export interface OfflineTransaction {
   isSynced: number;
 }
 
+export interface AttendantSalesMetrics {
+  todayTotalFcfa: number;
+  todayLiters: number;
+  todayTxCount: number;
+  yesterdayTotalFcfa: number;
+  yesterdayLiters: number;
+  yesterdayTxCount: number;
+  deltaFcfa: number;
+  deltaPercentage: number;
+}
+
 // In-memory / storage fallback for web, native SQLite for Android/iOS
 class LocalDatabaseService {
   private inMemoryQueue: OfflineTransaction[] = [];
@@ -50,6 +61,7 @@ class LocalDatabaseService {
     }
     this.initialized = true;
   }
+
 
   async queueTransaction(tx: Omit<OfflineTransaction, 'isSynced'>): Promise<void> {
     await this.init();
@@ -142,6 +154,67 @@ class LocalDatabaseService {
   async getPendingCount(): Promise<number> {
     const list = await this.getPendingTransactions();
     return list.length;
+  }
+
+  async getTransactionsByAttendantAndStation(
+    attendantId?: string | null,
+    stationId?: string | null
+  ): Promise<OfflineTransaction[]> {
+    const all = await this.getAllTransactions();
+    return all.filter((t) => {
+      if (attendantId && t.attendantId && t.attendantId !== attendantId) return false;
+      if (stationId && t.stationId && t.stationId !== stationId) return false;
+      return true;
+    });
+  }
+
+  async getAttendantSalesMetrics(
+    attendantId?: string | null,
+    stationId?: string | null
+  ): Promise<AttendantSalesMetrics> {
+    const txns = await this.getTransactionsByAttendantAndStation(attendantId, stationId);
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+    const yesterday = new Date(now.getTime() - 86400000);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+    let todayTotalFcfa = 0;
+    let todayLiters = 0;
+    let todayTxCount = 0;
+
+    let yesterdayTotalFcfa = 0;
+    let yesterdayLiters = 0;
+    let yesterdayTxCount = 0;
+
+    for (const t of txns) {
+      const tDate = (t.timestamp || '').split('T')[0];
+      if (tDate === todayStr) {
+        todayTotalFcfa += t.amountFcfa || 0;
+        todayLiters += t.liters || 0;
+        todayTxCount += 1;
+      } else if (tDate === yesterdayStr) {
+        yesterdayTotalFcfa += t.amountFcfa || 0;
+        yesterdayLiters += t.liters || 0;
+        yesterdayTxCount += 1;
+      }
+    }
+
+    const deltaFcfa = todayTotalFcfa - yesterdayTotalFcfa;
+    const deltaPercentage =
+      yesterdayTotalFcfa > 0
+        ? Math.round(((todayTotalFcfa - yesterdayTotalFcfa) / yesterdayTotalFcfa) * 1000) / 10
+        : 0;
+
+    return {
+      todayTotalFcfa,
+      todayLiters: Math.round(todayLiters * 100) / 100,
+      todayTxCount,
+      yesterdayTotalFcfa,
+      yesterdayLiters: Math.round(yesterdayLiters * 100) / 100,
+      yesterdayTxCount,
+      deltaFcfa,
+      deltaPercentage,
+    };
   }
 }
 

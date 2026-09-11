@@ -1,0 +1,83 @@
+import React from 'react';
+import { useColorScheme } from 'react-native';
+import { Tabs } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { Colors } from '@/constants/theme';
+
+export default function PompisteLayout() {
+  const scheme = useColorScheme();
+  const dark = scheme !== 'light';
+  const theme = dark ? Colors.dark : Colors.light;
+  const insets = useSafeAreaInsets();
+
+  return (
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+        tabBarActiveTintColor: theme.accentPrimary,
+        tabBarInactiveTintColor: theme.textMuted,
+        tabBarStyle: {
+          backgroundColor: theme.backgroundElement,
+          borderTopWidth: 0,
+          elevation: 0,
+          shadowOpacity: 0,
+          height: 58 + Math.max(insets.bottom, 12),
+          paddingBottom: Math.max(insets.bottom, 8),
+          paddingTop: 6,
+        },
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '600',
+        },
+      }}
+    >
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'Tableau de Bord',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="speedometer-outline" size={size || 22} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="scan"
+        options={{
+          title: 'Vérif Carte',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="scan-outline" size={size || 22} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="payment"
+        options={{
+          title: 'Paiement',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="card-outline" size={size || 22} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="transactions"
+        options={{
+          title: 'Mes Ventes',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="receipt-outline" size={size || 22} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profil',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="person-outline" size={size || 22} color={color} />
+          ),
+        }}
+      />
+    </Tabs>
+  );
+}

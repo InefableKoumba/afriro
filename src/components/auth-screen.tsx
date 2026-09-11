@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { Ionicons } from "@expo/vector-icons";
+import { useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -8,36 +9,37 @@ import {
   StyleSheet,
   TextInput,
   View,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { ThemedText } from '@/components/themed-text';
-import { Colors, Radius, Spacing } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { DEMO_PROFILES, DemoProfileItem, mobileAuth } from '@/services/auth';
+import { ThemedText } from "@/components/themed-text";
+import { Colors, Radius, Spacing } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { mobileAuth } from "@/services/auth";
 
 interface AuthScreenProps {
   onSuccess?: () => void;
   onOpenOnboarding?: () => void;
 }
 
-export default function AuthScreen({ onSuccess, onOpenOnboarding }: AuthScreenProps) {
+export default function AuthScreen({
+  onSuccess,
+  onOpenOnboarding,
+}: AuthScreenProps) {
   const scheme = useColorScheme();
-  const dark = scheme !== 'light';
+  const dark = scheme !== "light";
   const theme = dark ? Colors.dark : Colors.light;
   const insets = useSafeAreaInsets();
 
-  const [phone, setPhone] = useState('+242060000003'); // Default to Pompiste
-  const [password, setPassword] = useState('Afriro2026!');
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [quickLoadingRole, setQuickLoadingRole] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleLogin = async () => {
     if (!phone || !password) {
-      setError('Veuillez renseigner votre numéro et mot de passe.');
+      setError("Veuillez renseigner votre numéro et mot de passe.");
       return;
     }
 
@@ -50,23 +52,7 @@ export default function AuthScreen({ onSuccess, onOpenOnboarding }: AuthScreenPr
     if (res.success) {
       onSuccess?.();
     } else {
-      setError(res.error || 'Identifiants invalides');
-    }
-  };
-
-  const handleQuickLogin = async (profile: DemoProfileItem) => {
-    setQuickLoadingRole(profile.role);
-    setError(null);
-    setPhone(profile.phone);
-    setPassword('Afriro2026!');
-
-    const res = await mobileAuth.login(profile.phone, 'Afriro2026!');
-    setQuickLoadingRole(null);
-
-    if (res.success) {
-      onSuccess?.();
-    } else {
-      setError(res.error || 'Connexion impossible au serveur central');
+      setError(res.error || "Identifiants invalides");
     }
   };
 
@@ -82,7 +68,7 @@ export default function AuthScreen({ onSuccess, onOpenOnboarding }: AuthScreenPr
       ]}
     >
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={{ flex: 1 }}
       >
         <ScrollView
@@ -93,10 +79,15 @@ export default function AuthScreen({ onSuccess, onOpenOnboarding }: AuthScreenPr
           {/* Brand Header */}
           <View style={styles.header}>
             <View style={styles.brandBadge}>
-              <View style={[styles.logoDot, { backgroundColor: theme.accentPrimary }]} />
+              <View
+                style={[
+                  styles.logoDot,
+                  { backgroundColor: theme.accentPrimary },
+                ]}
+              />
               <ThemedText
                 type="caption"
-                style={{ color: theme.accentPrimary, fontWeight: '500' }}
+                style={{ color: theme.accentPrimary, fontWeight: "500" }}
               >
                 RÉSEAU STATIONS AFRIC' CONGO
               </ThemedText>
@@ -112,7 +103,8 @@ export default function AuthScreen({ onSuccess, onOpenOnboarding }: AuthScreenPr
               type="body"
               style={[styles.subtitle, { color: theme.textSecondary }]}
             >
-              Authentifiez-vous pour accéder à votre terminal de gestion et vos cartes carburant.
+              Authentifiez-vous pour accéder à votre terminal de gestion et vos
+              cartes carburant.
             </ThemedText>
           </View>
 
@@ -131,7 +123,11 @@ export default function AuthScreen({ onSuccess, onOpenOnboarding }: AuthScreenPr
 
             {error && (
               <View style={styles.errorBox}>
-                <Ionicons name="alert-circle-outline" size={16} color={theme.statusError} />
+                <Ionicons
+                  name="alert-circle-outline"
+                  size={16}
+                  color={theme.statusError}
+                />
                 <ThemedText
                   type="caption"
                   style={{ color: theme.statusError, flex: 1 }}
@@ -217,7 +213,7 @@ export default function AuthScreen({ onSuccess, onOpenOnboarding }: AuthScreenPr
                     hitSlop={10}
                   >
                     <Ionicons
-                      name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                      name={showPassword ? "eye-off-outline" : "eye-outline"}
                       size={18}
                       color={theme.textMuted}
                     />
@@ -228,12 +224,12 @@ export default function AuthScreen({ onSuccess, onOpenOnboarding }: AuthScreenPr
               {/* Submit Button */}
               <Pressable
                 onPress={handleLogin}
-                disabled={loading || !!quickLoadingRole}
+                disabled={loading}
                 style={({ pressed }) => [
                   styles.primaryButton,
                   {
                     backgroundColor: theme.accentPrimary,
-                    opacity: loading || !!quickLoadingRole ? 0.7 : pressed ? 0.9 : 1,
+                    opacity: loading ? 0.7 : pressed ? 0.9 : 1,
                   },
                 ]}
               >
@@ -241,7 +237,7 @@ export default function AuthScreen({ onSuccess, onOpenOnboarding }: AuthScreenPr
                   <ActivityIndicator color="#FFFFFF" size="small" />
                 ) : (
                   <>
-                    <ThemedText type="smallBold" style={{ color: '#FFFFFF' }}>
+                    <ThemedText type="smallBold" style={{ color: "#FFFFFF" }}>
                       Se Connecter
                     </ThemedText>
                     <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
@@ -251,116 +247,15 @@ export default function AuthScreen({ onSuccess, onOpenOnboarding }: AuthScreenPr
             </View>
           </View>
 
-          {/* Quick Login Profiles for Testing / Demoing */}
-          <View style={styles.quickSection}>
-            <View style={styles.quickHeader}>
-              <ThemedText type="label" style={{ color: theme.text }}>
-                Profils de Test Réels (1-Clic)
-              </ThemedText>
-              <ThemedText type="caption" style={{ color: theme.textMuted }}>
-                Base PostgreSQL Afric'
-              </ThemedText>
-            </View>
-
-            <View style={styles.quickList}>
-              {DEMO_PROFILES.map((prof) => {
-                const isThisLoading = quickLoadingRole === prof.role;
-                return (
-                  <Pressable
-                    key={prof.role}
-                    onPress={() => handleQuickLogin(prof)}
-                    disabled={loading || !!quickLoadingRole}
-                    style={({ pressed }) => [
-                      styles.quickCard,
-                      {
-                        backgroundColor: theme.backgroundElement,
-                        opacity: pressed ? 0.8 : 1,
-                      },
-                    ]}
-                  >
-                    <View style={styles.quickCardHeader}>
-                      <View style={styles.quickRoleBadge}>
-                        <View
-                          style={[
-                            styles.quickIconCircle,
-                            { backgroundColor: theme.accentTranslucent },
-                          ]}
-                        >
-                          <Ionicons
-                            name={prof.icon as any}
-                            size={16}
-                            color={theme.accentPrimary}
-                          />
-                        </View>
-                        <View>
-                          <ThemedText
-                            type="smallBold"
-                            style={{ color: theme.text }}
-                          >
-                            {prof.roleLabel}
-                          </ThemedText>
-                          <ThemedText
-                            type="caption"
-                            style={{ color: theme.textSecondary, fontSize: 11 }}
-                          >
-                            {prof.sublabel}
-                          </ThemedText>
-                        </View>
-                      </View>
-
-                      {isThisLoading ? (
-                        <ActivityIndicator size="small" color={theme.accentPrimary} />
-                      ) : (
-                        <View
-                          style={[
-                            styles.loginChip,
-                            {
-                              backgroundColor: theme.backgroundSelected,
-                            },
-                          ]}
-                        >
-                          <ThemedText
-                            type="caption"
-                            style={{ color: theme.accentPrimary, fontSize: 11 }}
-                          >
-                            Tester
-                          </ThemedText>
-                          <Ionicons
-                            name="chevron-forward"
-                            size={12}
-                            color={theme.accentPrimary}
-                          />
-                        </View>
-                      )}
-                    </View>
-
-                    <ThemedText
-                      type="caption"
-                      style={{ color: theme.textMuted, marginTop: 6 }}
-                    >
-                      {prof.description}
-                    </ThemedText>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </View>
-
           {/* Re-run Onboarding link */}
           {onOpenOnboarding && (
-            <Pressable
-              onPress={onOpenOnboarding}
-              style={styles.onboardingLink}
-            >
+            <Pressable onPress={onOpenOnboarding} style={styles.onboardingLink}>
               <Ionicons
                 name="information-circle-outline"
                 size={16}
                 color={theme.accentPrimary}
               />
-              <ThemedText
-                type="label"
-                style={{ color: theme.accentPrimary }}
-              >
+              <ThemedText type="label" style={{ color: theme.accentPrimary }}>
                 Revoir la présentation du système (Guide)
               </ThemedText>
             </Pressable>
@@ -379,15 +274,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.screenPadding,
     paddingVertical: Spacing.lg,
     maxWidth: 500,
-    width: '100%',
-    alignSelf: 'center',
+    width: "100%",
+    alignSelf: "center",
   },
   header: {
     marginBottom: Spacing.lg,
   },
   brandBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
     marginBottom: Spacing.sm,
   },
@@ -411,12 +306,12 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
   },
   errorBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
     padding: 10,
     borderRadius: Radius.chip,
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    backgroundColor: "rgba(239, 68, 68, 0.1)",
     marginTop: 10,
   },
   formGroup: {
@@ -424,8 +319,8 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     height: 48,
     borderRadius: Radius.chip,
     paddingHorizontal: Spacing.md,
@@ -433,14 +328,14 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 15,
-    height: '100%',
+    height: "100%",
   },
   primaryButton: {
     height: 48,
     borderRadius: Radius.pill,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 8,
     marginTop: 4,
   },
@@ -448,9 +343,9 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
   },
   quickHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: Spacing.sm,
   },
   quickList: {
@@ -461,13 +356,13 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   quickCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   quickRoleBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 10,
     flex: 1,
   },
@@ -475,21 +370,21 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   loginChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
     paddingVertical: 5,
     paddingHorizontal: 10,
     borderRadius: Radius.pill,
   },
   onboardingLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 8,
     paddingVertical: Spacing.md,
   },
